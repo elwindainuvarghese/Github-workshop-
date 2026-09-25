@@ -1,8 +1,6 @@
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useRef, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils'
-import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler'
 
 // ─── SHADER CODE ───────────────────────────────────────────────────────────
 const vertexShader = `
@@ -15,6 +13,7 @@ attribute vec3 aPositionB;
 attribute vec3 aPositionC;
 attribute vec3 aPositionD;
 
+// Classic 3D Simplex Noise function
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 float snoise(vec3 v){
@@ -80,7 +79,7 @@ void main() {
 
   // Drift
   float noiseFreq = 0.2;
-  float noiseAmp = 0.2;
+  float noiseAmp = 0.5;
   vec3 noisePos = vec3(
     snoise(targetPos * noiseFreq + uTime * 0.2),
     snoise(targetPos * noiseFreq + uTime * 0.2 + 100.0),
@@ -98,7 +97,10 @@ void main() {
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
-  gl_PointSize = (12.0 / -mvPosition.z);
+  
+  // Size based on depth
+  gl_PointSize = (18.0 / -mvPosition.z);
+  
   gl_Position = projectionMatrix * mvPosition;
 }
 `
@@ -107,131 +109,67 @@ const fragmentShader = `
 void main() {
   float dist = length(gl_PointCoord - vec2(0.5));
   if (dist > 0.5) discard;
+  // Strict Neon Terminal Green: #00FF41
   vec3 neonGreen = vec3(0.0, 1.0, 0.255);
   float alpha = smoothstep(0.5, 0.1, dist);
   gl_FragColor = vec4(neonGreen, alpha * 0.8);
 }
 `
 
-// ─── GEOMETRY BUILDERS ──────────────────────────────────────────────────────
+// ─── PROCEDURAL GEOMETRY GENERATORS ────────────────────────────────────────
 
-function sampleGeometry(geometry, count) {
-  const material = new THREE.MeshBasicMaterial()
-  const mesh = new THREE.Mesh(geometry, material)
-  const sampler = new MeshSurfaceSampler(mesh).build()
-  const points = new Float32Array(count * 3)
-  const tempPosition = new THREE.Vector3()
+function generateOrganicShapes(count) {
+  const posA = new Float32Array(count * 3) // SHAPE A: Twisted DNA Helix
+  const posB = new Float32Array(count * 3) // SHAPE B: The Globe (World Wide Web)
+  const posC = new Float32Array(count * 3) // SHAPE C: Torus Knot (Complex Core)
+  const posD = new Float32Array(count * 3) // SHAPE D: Fluid Splatter Wave
 
   for (let i = 0; i < count; i++) {
-    sampler.sample(tempPosition)
-    points[i * 3 + 0] = tempPosition.x
-    points[i * 3 + 1] = tempPosition.y
-    points[i * 3 + 2] = tempPosition.z
-  }
-  return points
-}
+    const i3 = i * 3
 
-// 01: CODING (Laptop)
-function buildLaptop() {
-  const parts = []
-  // Base / Keyboard
-  const base = new THREE.BoxGeometry(8, 0.2, 5)
-  base.translate(0, -2, 0)
-  parts.push(base)
-  // Screen
-  const screen = new THREE.BoxGeometry(8, 5, 0.2)
-  screen.translate(0, 2.5, -2.5)
-  screen.rotateX(-0.2) // Tilted back
-  screen.translate(0, -2, 0)
-  parts.push(screen)
-  
-  const merged = mergeGeometries(parts)
-  merged.rotateY(0.4)
-  merged.rotateX(0.2)
-  return merged
-}
+    // --- SHAPE A: Twisted DNA / Cylinder (Hero) ---
+    const height = 16
+    const radius = 4
+    const yA = (Math.random() - 0.5) * height
+    const angleA = yA * 2.5 + Math.random() * Math.PI * 2
+    const rA = Math.random() > 0.5 ? radius : radius - 1.5 + Math.random() * 0.5
+    posA[i3 + 0] = Math.cos(angleA) * rA
+    posA[i3 + 1] = yA
+    posA[i3 + 2] = Math.sin(angleA) * rA
 
-// 02: DEVELOPMENT (Floating Code Screens)
-function buildScreens() {
-  const parts = []
-  
-  // Screen 1 (Center Left)
-  const s1 = new THREE.BoxGeometry(5, 4, 0.1)
-  s1.translate(-2, 0, 1)
-  s1.rotateY(0.2)
-  parts.push(s1)
-  
-  // Screen 2 (Center Right, tilted)
-  const s2 = new THREE.BoxGeometry(4, 3.5, 0.1)
-  s2.translate(3, 1, -1)
-  s2.rotateY(-0.3)
-  parts.push(s2)
-  
-  // Screen 3 (Bottom Right)
-  const s3 = new THREE.BoxGeometry(3, 2.5, 0.1)
-  s3.translate(2, -2, 2)
-  s3.rotateY(-0.1)
-  parts.push(s3)
+    // --- SHAPE B: Sphere / Globe ---
+    const phi = Math.acos((Math.random() * 2) - 1)
+    const theta = Math.random() * Math.PI * 2
+    const rB = 5 + (Math.random() * 0.3)
+    posB[i3 + 0] = rB * Math.sin(phi) * Math.cos(theta)
+    posB[i3 + 1] = rB * Math.sin(phi) * Math.sin(theta)
+    posB[i3 + 2] = rB * Math.cos(phi)
 
-  const merged = mergeGeometries(parts)
-  return merged
-}
+    // --- SHAPE C: Torus Knot ---
+    const t = Math.random() * Math.PI * 2
+    const p = 2; const q = 3; const rT = 3; const tube = 1.5;
+    const rC = rT + tube * Math.cos(q * t)
+    const tx = rC * Math.cos(p * t)
+    const ty = rC * Math.sin(p * t)
+    const tz = tube * Math.sin(q * t)
+    // Add spread inside the tube
+    const spreadAngle = Math.random() * Math.PI * 2
+    const spreadRadius = Math.random() * tube
+    posC[i3 + 0] = tx + Math.cos(spreadAngle) * spreadRadius
+    posC[i3 + 1] = ty + Math.sin(spreadAngle) * spreadRadius
+    posC[i3 + 2] = tz + (Math.random() - 0.5)
 
-// 03: CLOUD & SERVERS
-function buildCloudServer() {
-  const parts = []
-  
-  // Cloud (Overlapping spheres)
-  const c1 = new THREE.SphereGeometry(2, 32, 32)
-  c1.translate(0, 3, 0)
-  parts.push(c1)
-  const c2 = new THREE.SphereGeometry(1.4, 32, 32)
-  c2.translate(-2, 2.5, 0)
-  parts.push(c2)
-  const c3 = new THREE.SphereGeometry(1.6, 32, 32)
-  c3.translate(2, 2.7, 0)
-  parts.push(c3)
-
-  // Servers (Stack of cylinders/boxes)
-  for(let i=0; i<4; i++) {
-    const server = new THREE.CylinderGeometry(2.2, 2.2, 0.8, 32)
-    server.translate(0, -1 - (i * 1.2), 0)
-    parts.push(server)
+    // --- SHAPE D: Fluid Splatter Wave ---
+    const waveX = (Math.random() - 0.5) * 35
+    const waveY = Math.sin(waveX * 0.5) * 4 + (Math.random() - 0.5) * 6
+    const waveZ = (Math.random() - 0.5) * 15
+    const isSplatter = Math.random() > 0.8
+    posD[i3 + 0] = isSplatter ? waveX * 1.5 : waveX
+    posD[i3 + 1] = isSplatter ? waveY + (Math.random() - 0.5) * 15 : waveY
+    posD[i3 + 2] = isSplatter ? waveZ * 2 : waveZ - 5
   }
 
-  const merged = mergeGeometries(parts)
-  return merged
-}
-
-// 04: DEPLOY & MONITOR (Desktop PC)
-function buildDesktop() {
-  const parts = []
-  // Monitor
-  const monitor = new THREE.BoxGeometry(7, 4.5, 0.5)
-  monitor.translate(0, 2, 0)
-  parts.push(monitor)
-  const stand = new THREE.CylinderGeometry(0.3, 0.3, 2, 16)
-  stand.translate(0, 0, 0)
-  parts.push(stand)
-  const base = new THREE.BoxGeometry(2.5, 0.2, 2.5)
-  base.translate(0, -1, 0)
-  parts.push(base)
-  // Tower
-  const tower = new THREE.BoxGeometry(2.5, 6, 5)
-  tower.translate(6, 1.5, 0)
-  parts.push(tower)
-  // Keyboard
-  const kb = new THREE.BoxGeometry(6, 0.2, 2.5)
-  kb.translate(0, -1, 3)
-  parts.push(kb)
-  // Mouse
-  const mouse = new THREE.BoxGeometry(0.6, 0.25, 1)
-  mouse.translate(4, -1, 3)
-  parts.push(mouse)
-  
-  const merged = mergeGeometries(parts)
-  merged.rotateY(-0.3)
-  return merged
+  return { posA, posB, posC, posD }
 }
 
 // ─── REACT COMPONENT ───────────────────────────────────────────────────────
@@ -240,39 +178,27 @@ function ParticleMorphSystem() {
   const shaderRef = useRef()
   const mouseWorld = useRef(new THREE.Vector3(0, 0, 0))
   const { camera } = useThree()
-  const [geometries, setGeometries] = useState(null)
-  
-  const PARTICLE_COUNT = 80000
 
-  useEffect(() => {
-    // 01: Coding, 02: Development, 03: Cloud & Servers, 04: Deploy & Monitor
-    const geoA = buildLaptop()
-    const geoB = buildScreens()
-    const geoC = buildCloudServer()
-    const geoD = buildDesktop()
-
-    setGeometries({
-      posA: sampleGeometry(geoA, PARTICLE_COUNT),
-      posB: sampleGeometry(geoB, PARTICLE_COUNT),
-      posC: sampleGeometry(geoC, PARTICLE_COUNT),
-      posD: sampleGeometry(geoD, PARTICLE_COUNT),
-    })
-  }, [])
+  // 60,000 looks amazing for organic shapes (dense but fluid)
+  const PARTICLE_COUNT = 60000
+  const { posA, posB, posC, posD } = useMemo(() => generateOrganicShapes(PARTICLE_COUNT), [])
 
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), [])
 
   useFrame((state, delta) => {
-    if (!shaderRef.current || !geometries) return
+    if (!shaderRef.current) return
 
     shaderRef.current.uniforms.uTime.value += delta
 
+    // Map scroll from 0.0 to 3.0
     const maxScroll = document.body.scrollHeight - window.innerHeight
     const scrollNormal = maxScroll > 0 ? Math.max(0, Math.min(1, window.scrollY / maxScroll)) : 0
     const targetProgress = scrollNormal * 3.0 
     
     shaderRef.current.uniforms.uProgress.value += (targetProgress - shaderRef.current.uniforms.uProgress.value) * 0.05
 
+    // Mouse Interaction
     raycaster.setFromCamera(state.mouse, camera)
     const intersectPoint = new THREE.Vector3()
     raycaster.ray.intersectPlane(plane, intersectPoint)
@@ -282,26 +208,25 @@ function ParticleMorphSystem() {
       shaderRef.current.uniforms.uMouse.value.copy(mouseWorld.current)
     }
 
-    // Slow cinematic rotation
-    state.scene.rotation.y = scrollNormal * Math.PI * 0.2
+    // Gentle rotation
+    state.scene.rotation.y = scrollNormal * Math.PI
+    state.scene.rotation.x = scrollNormal * 0.5
   })
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
     uMouse: { value: new THREE.Vector3() },
-    uMouseRadius: { value: 3.0 }
+    uMouseRadius: { value: 3.5 }
   }), [])
-
-  if (!geometries) return null 
 
   return (
     <points>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={geometries.posA} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={geometries.posB} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={geometries.posC} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={geometries.posD} itemSize={3} />
+        <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={posA} itemSize={3} />
+        <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={posB} itemSize={3} />
+        <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={posC} itemSize={3} />
+        <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={posD} itemSize={3} />
       </bufferGeometry>
       <shaderMaterial
         ref={shaderRef}
