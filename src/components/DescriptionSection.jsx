@@ -57,7 +57,7 @@ export default function DescriptionSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.3], [0, 1])
 
   return (
-    <section ref={sectionRef} style={{ position: 'relative', padding: isMobile ? '60px 16px' : '120px 24px', background: 'transparent', overflow: 'hidden' }}>
+    <section ref={sectionRef} style={{ position: 'relative', padding: isMobile ? '60px 16px' : '120px 24px', background: '#000', overflow: 'hidden' }}>
       {/* BG grid */}
       <div style={{
         position: 'absolute', inset: 0,

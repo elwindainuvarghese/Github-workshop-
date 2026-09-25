@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import MatrixRain from './MatrixRain'
 import useIsMobile from '../hooks/useIsMobile'
 
 function useTyping(lines, speed = 60, startDelay = 0) {
@@ -185,6 +186,8 @@ export default function HeroSection() {
       minHeight: '100vh',
       padding: isMobile ? '80px 16px 40px' : '0 24px',
     }}>
+      <MatrixRain opacity={isMobile ? 0.12 : 0.2} />
+
       {/* Center dark overlay */}
       <div style={{
         position: 'absolute', inset: 0,

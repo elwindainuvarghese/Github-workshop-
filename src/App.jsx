@@ -6,7 +6,6 @@ import HeroSection from './components/HeroSection'
 import TextTunnel from './components/TextTunnel'
 import DescriptionSection from './components/DescriptionSection'
 import RosterSection from './components/RosterSection'
-import InteractiveBackground from './components/InteractiveBackground'
 import { motion } from 'framer-motion'
 
 export default function App() {
@@ -26,7 +25,6 @@ export default function App() {
 
   return (
     <>
-      <InteractiveBackground />
       <GlitchCursor />
       {/* Persistent scanlines + noise */}
       <div className="scanlines" />
@@ -39,7 +37,6 @@ export default function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          style={{ position: 'relative', zIndex: 1 }}
         >
           <HeroSection />
           <TextTunnel />
@@ -56,7 +53,7 @@ function Footer() {
   return (
     <footer style={{
       padding: '60px 24px 40px',
-      background: 'transparent',
+      background: '#000',
       position: 'relative',
       textAlign: 'center',
     }}>

@@ -91,7 +91,7 @@ export default function RosterSection({ data, loading, error }) {
   const participants = data?.participants || []
 
   return (
-    <section id="roster" style={{ padding: isMobile ? '60px 16px' : '120px 24px', background: 'transparent', position: 'relative' }}>
+    <section id="roster" style={{ padding: isMobile ? '60px 16px' : '120px 24px', background: '#000', position: 'relative' }}>
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0,255,65,0.012) 59px, rgba(0,255,65,0.012) 60px)',
