@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { ReactLenis } from 'lenis/react'
 import './index.css'
 import GlitchCursor from './components/CustomCursor'
 import GlitchLoader from './components/GlitchLoader'
 import HeroSection from './components/HeroSection'
-import TextTunnel from './components/TextTunnel'
 import DescriptionSection from './components/DescriptionSection'
 import RosterSection from './components/RosterSection'
+import TechParticleObject from './components/TechParticleObject'
 import { motion } from 'framer-motion'
 
 export default function App() {
@@ -24,7 +25,8 @@ export default function App() {
   const handleLoadComplete = useCallback(() => setLoaded(true), [])
 
   return (
-    <>
+    <ReactLenis root options={{ lerp: 0.08, smoothWheel: true }}>
+      <TechParticleObject />
       <GlitchCursor />
       {/* Persistent scanlines + noise */}
       <div className="scanlines" />
@@ -37,15 +39,15 @@ export default function App() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          style={{ position: 'relative', zIndex: 1 }}
         >
           <HeroSection />
-          <TextTunnel />
           <DescriptionSection />
           <RosterSection data={rosterData} loading={rosterLoading} error={rosterError} />
           <Footer />
         </motion.main>
       )}
-    </>
+    </ReactLenis>
   )
 }
 
@@ -53,7 +55,7 @@ function Footer() {
   return (
     <footer style={{
       padding: '60px 24px 40px',
-      background: '#000',
+      background: 'transparent',
       position: 'relative',
       textAlign: 'center',
     }}>
