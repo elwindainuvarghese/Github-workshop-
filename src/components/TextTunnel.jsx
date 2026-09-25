@@ -210,7 +210,7 @@ export default function TextTunnel() {
           transition={{ repeat: Infinity, duration: 2 }}
           style={{
             fontFamily: "'Orbitron'",
-            fontSize: 'clamp(20px, 4vw, 48px)',
+            fontSize: 'clamp(14px, 4vw, 48px)',
             fontWeight: 900,
             color: '#00ff41',
             textShadow: '0 0 30px rgba(0,255,65,0.6)',
