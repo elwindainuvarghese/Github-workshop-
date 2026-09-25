@@ -112,7 +112,7 @@ export default function TextTunnel() {
       time.current += 0.0028 * speed.current
 
       ctx.clearRect(0, 0, W, H)
-      ctx.fillStyle = '#000'
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
       ctx.fillRect(0, 0, W, H)
 
       /* ── Vanishing point: follows mouse ─────────────── */
@@ -303,7 +303,7 @@ export default function TextTunnel() {
         height: '100vh',
         minHeight: '400px',
         overflow: 'hidden',
-        background: '#000',
+        background: 'transparent',
         cursor: 'crosshair',
         touchAction: 'none',   /* let our touch handlers run unblocked */
       }}
