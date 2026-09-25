@@ -11,9 +11,7 @@ uniform float uMouseRadius;
 
 attribute vec3 aPositionB;
 attribute vec3 aPositionC;
-attribute vec3 aColor;
-
-varying vec3 vColor;
+attribute vec3 aPositionD;
 
 // Classic 3D Simplex Noise function (by Ashima Arts)
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
@@ -66,23 +64,24 @@ float snoise(vec3 v){
 }
 
 void main() {
-  vColor = aColor;
-
-  // 1. Morphing Logic
+  // 1. Morphing Logic (4 Shapes -> 3 Transitions)
+  // uProgress goes from 0.0 to 3.0
   vec3 targetPos;
+  
   if (uProgress < 1.0) {
-    // Morph between Shape A (position) and Shape B
     float t = smoothstep(0.0, 1.0, uProgress);
     targetPos = mix(position, aPositionB, t);
-  } else {
-    // Morph between Shape B and Shape C
+  } else if (uProgress < 2.0) {
     float t = smoothstep(0.0, 1.0, uProgress - 1.0);
     targetPos = mix(aPositionB, aPositionC, t);
+  } else {
+    float t = smoothstep(0.0, 1.0, uProgress - 2.0);
+    targetPos = mix(aPositionC, aPositionD, t);
   }
 
   // 2. Organic Noise (Drift)
-  float noiseFreq = 0.2;
-  float noiseAmp = 0.5;
+  float noiseFreq = 0.3;
+  float noiseAmp = 0.4;
   vec3 noisePos = vec3(
     snoise(targetPos * noiseFreq + uTime * 0.2),
     snoise(targetPos * noiseFreq + uTime * 0.2 + 100.0),
@@ -94,90 +93,139 @@ void main() {
   float dist = distance(targetPos, uMouse);
   if (dist < uMouseRadius) {
     vec3 dir = normalize(targetPos - uMouse);
-    // Exponential falloff for smooth spring feeling
     float force = (uMouseRadius - dist) / uMouseRadius;
-    force = pow(force, 2.0); // Stronger at center
-    targetPos += dir * force * 1.5; // push amount
+    force = pow(force, 2.0);
+    targetPos += dir * force * 2.0; // magnetic push
   }
 
   // Calculate final position
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
   
   // Perspective point size
-  gl_PointSize = (18.0 / -mvPosition.z);
+  gl_PointSize = (15.0 / -mvPosition.z);
   
   gl_Position = projectionMatrix * mvPosition;
 }
 `
 
 const fragmentShader = `
-varying vec3 vColor;
-
 void main() {
-  // Create a soft circle
+  // Create a soft glowing circle
   float dist = length(gl_PointCoord - vec2(0.5));
   if (dist > 0.5) discard;
+  
+  // Strict Neon Terminal Green: #00FF41
+  vec3 neonGreen = vec3(0.0, 1.0, 0.255);
   
   // Soft edge glow
   float alpha = smoothstep(0.5, 0.1, dist);
   
-  gl_FragColor = vec4(vColor, alpha * 0.8);
+  gl_FragColor = vec4(neonGreen, alpha * 0.9);
 }
 `
 
-// ─── GEOMETRY GENERATORS ───────────────────────────────────────────────────
+// ─── PROCEDURAL GEOMETRY GENERATORS ────────────────────────────────────────
 
 function generateShapes(count) {
-  const posA = new Float32Array(count * 3) // SHAPE A: DNA Helix / Cylinder
-  const posB = new Float32Array(count * 3) // SHAPE B: Sphere (GitHub Globe)
-  const posC = new Float32Array(count * 3) // SHAPE C: Expanded Grid / Box (Code Matrix)
-  const colors = new Float32Array(count * 3)
-
-  const cGreen = new THREE.Color('#00ff41')
-  const cCyan = new THREE.Color('#00f5ff')
-  const cPurple = new THREE.Color('#bf00ff')
+  const posA = new Float32Array(count * 3) // SHAPE A: Space Rocket
+  const posB = new Float32Array(count * 3) // SHAPE B: Plane
+  const posC = new Float32Array(count * 3) // SHAPE C: Desktop Computer
+  const posD = new Float32Array(count * 3) // SHAPE D: Dense Abstract Wall
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3
 
-    // --- SHAPE A: Twisted DNA / Cylinder (Hero) ---
-    const height = 12
-    const radius = 3
-    const yA = (Math.random() - 0.5) * height
-    const angleA = yA * 2.5 + Math.random() * Math.PI * 2 // Twisted
-    const rA = Math.random() > 0.5 ? radius : radius - 1.5 + Math.random() * 0.5
-    posA[i3 + 0] = Math.cos(angleA) * rA
-    posA[i3 + 1] = yA
-    posA[i3 + 2] = Math.sin(angleA) * rA
+    // --- SHAPE A: Space Rocket (Procedural Approximation) ---
+    // Body (Cylinder), Nose (Cone), Fins (Triangles)
+    const rA = Math.random()
+    if (rA < 0.6) {
+      // Main Body Cylinder
+      const h = (Math.random() - 0.5) * 8
+      const angle = Math.random() * Math.PI * 2
+      const radius = 1.2
+      posA[i3 + 0] = Math.cos(angle) * radius
+      posA[i3 + 1] = h
+      posA[i3 + 2] = Math.sin(angle) * radius
+    } else if (rA < 0.8) {
+      // Nose Cone
+      const h = Math.random() * 3 + 4 // Top part
+      const angle = Math.random() * Math.PI * 2
+      const radius = 1.2 * (1.0 - (h - 4) / 3) // Tapers to 0
+      posA[i3 + 0] = Math.cos(angle) * radius
+      posA[i3 + 1] = h
+      posA[i3 + 2] = Math.sin(angle) * radius
+    } else {
+      // Engine / Fins at bottom
+      const angle = (Math.floor(Math.random() * 3) / 3) * Math.PI * 2
+      const spread = Math.random() * 2 + 1.2
+      const h = -4 - Math.random() * 2
+      posA[i3 + 0] = Math.cos(angle) * spread
+      posA[i3 + 1] = h
+      posA[i3 + 2] = Math.sin(angle) * spread
+    }
+    // Rotate Rocket slightly to look dynamic
+    const tempX = posA[i3+0]; const tempY = posA[i3+1]
+    posA[i3+0] = tempX * Math.cos(0.5) - tempY * Math.sin(0.5)
+    posA[i3+1] = tempX * Math.sin(0.5) + tempY * Math.cos(0.5)
 
-    // --- SHAPE B: Sphere / Globe (Middle section) ---
-    const phi = Math.acos((Math.random() * 2) - 1)
-    const theta = Math.random() * Math.PI * 2
-    const rB = 4 + (Math.random() * 0.2) // slightly fuzzy edge
-    posB[i3 + 0] = rB * Math.sin(phi) * Math.cos(theta)
-    posB[i3 + 1] = rB * Math.sin(phi) * Math.sin(theta)
-    posB[i3 + 2] = rB * Math.cos(phi)
 
-    // --- SHAPE C: Tech Grid / Box (Bottom section) ---
-    const sC = 8
-    posC[i3 + 0] = (Math.random() - 0.5) * sC * 1.5
-    posC[i3 + 1] = (Math.random() - 0.5) * sC
-    posC[i3 + 2] = (Math.random() - 0.5) * sC * 0.5
+    // --- SHAPE B: Plane (Procedural Approximation) ---
+    // Fuselage and swept wings
+    const rB = Math.random()
+    if (rB < 0.3) {
+      // Fuselage (Long cylinder along Z)
+      const z = (Math.random() - 0.5) * 10
+      const angle = Math.random() * Math.PI * 2
+      const radius = 0.8
+      posB[i3 + 0] = Math.cos(angle) * radius
+      posB[i3 + 1] = Math.sin(angle) * radius
+      posB[i3 + 2] = z
+    } else {
+      // Swept Wings
+      const side = Math.random() > 0.5 ? 1 : -1
+      const z = (Math.random() - 0.5) * 4 // Spread along fuselage
+      const x = (Math.random() * 6) * side // Wing span
+      // Sweep back
+      const sweptZ = z - Math.abs(x) * 0.8
+      posB[i3 + 0] = x
+      posB[i3 + 1] = (Math.random() - 0.5) * 0.2 // thin wing
+      posB[i3 + 2] = sweptZ
+    }
+    // Tilt plane up slightly
+    const tempZ2 = posB[i3+2]; const tempY2 = posB[i3+1]
+    posB[i3+1] = tempY2 * Math.cos(0.2) - tempZ2 * Math.sin(0.2)
+    posB[i3+2] = tempY2 * Math.sin(0.2) + tempZ2 * Math.cos(0.2)
 
-    // --- COLORS ---
-    const mixed = new THREE.Color()
-    const r = Math.random()
-    if (r < 0.5) mixed.copy(cGreen)
-    else if (r < 0.8) mixed.copy(cCyan)
-    else mixed.copy(cPurple)
-    
-    mixed.multiplyScalar(0.5 + Math.random() * 0.5)
-    colors[i3 + 0] = mixed.r
-    colors[i3 + 1] = mixed.g
-    colors[i3 + 2] = mixed.b
+
+    // --- SHAPE C: Desktop Computer (Procedural Approximation) ---
+    // Monitor Box + Stand + Keyboard
+    const rC = Math.random()
+    if (rC < 0.7) {
+      // Monitor (Flat box)
+      posC[i3 + 0] = (Math.random() - 0.5) * 8
+      posC[i3 + 1] = (Math.random() - 0.5) * 5 + 3
+      posC[i3 + 2] = (Math.random() - 0.5) * 0.5 - 2
+    } else if (rC < 0.8) {
+      // Stand (Vertical slim box)
+      posC[i3 + 0] = (Math.random() - 0.5) * 2
+      posC[i3 + 1] = (Math.random() - 0.5) * 3
+      posC[i3 + 2] = (Math.random() - 0.5) * 0.5 - 2
+    } else {
+      // Keyboard (Flat box on ground)
+      posC[i3 + 0] = (Math.random() - 0.5) * 6
+      posC[i3 + 1] = (Math.random() - 0.5) * 0.2 - 1.5
+      posC[i3 + 2] = (Math.random() - 0.5) * 3 + 2
+    }
+
+
+    // --- SHAPE D: Dense Abstract Wall ---
+    // Massive, perfectly flat grid with some depth noise
+    posD[i3 + 0] = (Math.random() - 0.5) * 20
+    posD[i3 + 1] = (Math.random() - 0.5) * 15
+    posD[i3 + 2] = (Math.random() - 0.5) * 1.5 - 5 // Pushed back slightly
   }
 
-  return { posA, posB, posC, colors }
+  return { posA, posB, posC, posD }
 }
 
 // ─── REACT COMPONENT ───────────────────────────────────────────────────────
@@ -185,53 +233,47 @@ function generateShapes(count) {
 function ParticleMorphSystem() {
   const shaderRef = useRef()
   const mouseWorld = useRef(new THREE.Vector3(0, 0, 0))
-  const { size, camera } = useThree()
+  const { camera } = useThree()
 
-  // Generate the geometries once
-  const PARTICLE_COUNT = 60000
-  const { posA, posB, posC, colors } = useMemo(() => generateShapes(PARTICLE_COUNT), [])
+  // Generate 80,000 highly dense particles
+  const PARTICLE_COUNT = 80000
+  const { posA, posB, posC, posD } = useMemo(() => generateShapes(PARTICLE_COUNT), [])
 
-  // Raycaster for mouse-to-world conversion
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
-  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), []) // Invisible plane at Z=0
+  const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), [])
 
   useFrame((state, delta) => {
     if (!shaderRef.current) return
 
-    // 1. Update Time
+    // 1. Time for noise
     shaderRef.current.uniforms.uTime.value += delta
 
-    // 2. Map scroll progress to uProgress (0.0 to 2.0)
-    // 0 = Shape A (Hero), 1 = Shape B (Description), 2 = Shape C (Roster)
+    // 2. Map scroll progress from 0.0 to 3.0 for the 4 shapes
     const maxScroll = document.body.scrollHeight - window.innerHeight
     const scrollNormal = maxScroll > 0 ? Math.max(0, Math.min(1, window.scrollY / maxScroll)) : 0
+    const targetProgress = scrollNormal * 3.0 // 0 to 3.0
     
-    // Smooth damp the scroll progress for a fluid transition
-    const targetProgress = scrollNormal * 2.0
     shaderRef.current.uniforms.uProgress.value += (targetProgress - shaderRef.current.uniforms.uProgress.value) * 0.05
 
-    // 3. Mouse Interaction (Raycast to world space)
+    // 3. Mouse Physics
     raycaster.setFromCamera(state.mouse, camera)
     const intersectPoint = new THREE.Vector3()
     raycaster.ray.intersectPlane(plane, intersectPoint)
     
     if (intersectPoint) {
-      // Smoothly move the uniform mouse position to the real mouse position
       mouseWorld.current.lerp(intersectPoint, 0.1)
       shaderRef.current.uniforms.uMouse.value.copy(mouseWorld.current)
     }
 
-    // Optional: Slow rotation of the entire system based on scroll
-    state.scene.rotation.y = scrollNormal * Math.PI
-    state.scene.rotation.x = scrollNormal * 0.5
+    // Gentle overall scene drift
+    state.scene.rotation.y = scrollNormal * Math.PI * 0.25
   })
 
-  // Shader uniforms
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
     uMouse: { value: new THREE.Vector3() },
-    uMouseRadius: { value: 2.5 } // Radius of repulsion
+    uMouseRadius: { value: 3.5 }
   }), [])
 
   return (
@@ -240,7 +282,7 @@ function ParticleMorphSystem() {
         <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={posA} itemSize={3} />
         <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={posB} itemSize={3} />
         <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={posC} itemSize={3} />
-        <bufferAttribute attach="attributes-aColor" count={PARTICLE_COUNT} array={colors} itemSize={3} />
+        <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={posD} itemSize={3} />
       </bufferGeometry>
       <shaderMaterial
         ref={shaderRef}
@@ -257,11 +299,10 @@ function ParticleMorphSystem() {
 
 export default function TechParticleObject() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-      <Canvas camera={{ position: [0, 0, 12], fov: 60 }} dpr={[1, 2]}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: '#000000' }}>
+      <Canvas camera={{ position: [0, 0, 15], fov: 60 }} dpr={[1, 2]}>
         <ParticleMorphSystem />
       </Canvas>
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%)', pointerEvents: 'none' }} />
     </div>
   )
 }
