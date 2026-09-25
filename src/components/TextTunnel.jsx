@@ -115,21 +115,28 @@ export default function TextTunnel() {
       ctx.fillStyle = '#000'
       ctx.fillRect(0, 0, W, H)
 
-      /* ── Vanishing point: follows mouse ─────────────── */
-      const vx = W * (0.12 + mouse.current.x * 0.48)
-      const vy = H * (0.05 + mouse.current.y * 0.38)
+      /* ── Vanishing point: follows mouse (top-left ish) ─────────────── */
+      // We want a strong diagonal even on portrait screens.
+      const isMobile = W < 600
+      
+      const vxBase = isMobile ? -W * 0.2 : W * 0.12
+      const vyBase = isMobile ? -H * 0.1 : H * 0.05
+      const vx = vxBase + mouse.current.x * (W * 0.5)
+      const vy = vyBase + mouse.current.y * (H * 0.4)
 
-      /* ── Near end: bottom-right, slight mouse influence */
-      const nx = W  * (0.7  + mouse.current.x * 0.28)
-      const ny = H  * (0.82 + mouse.current.y * 0.14)
+      /* ── Near end: bottom-right, extends WAY off screen on mobile to maintain angle */
+      const nxBase = isMobile ? W * 1.5 : W * 0.7
+      const nyBase = isMobile ? H * 0.9 : H * 0.82
+      const nx = nxBase + mouse.current.x * (W * 0.3)
+      const ny = nyBase + mouse.current.y * (H * 0.2)
 
       /* ── Sphere position: ~28% along the ribbon ─────── */
-      const t28  = 0.28
+      const t28  = isMobile ? 0.35 : 0.28
       const spX = vx + (nx - vx) * t28
       const spY = vy + (ny - vy) * t28
-      const sphR = Math.min(W, H) * (W < 500 ? 0.055 : 0.052)
+      const sphR = Math.min(W, H) * (isMobile ? 0.12 : 0.052)
 
-      /* ═══════ DRAW TEXT RIBBON ═════════════════════════ */
+      /* ═══════ DRAW TEXT RIBLED ═════════════════════════ */
       for (let i = 0; i < N; i++) {
         /* phase: 0 = at vanishing pt (far/tiny), 1 = at viewer (huge) */
         let phase = ((i / N) + time.current) % 1
@@ -142,7 +149,7 @@ export default function TextTunnel() {
         const ry = vy + (ny - vy) * ep
 
         /* Font size */
-        const maxFS = Math.min(W * 0.17, W < 500 ? 72 : 110)
+        const maxFS = isMobile ? W * 0.3 : Math.min(W * 0.17, 110)
         const fs    = Math.max(7, 7 + (maxFS - 7) * ep)
 
         /* Which text row */
