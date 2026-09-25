@@ -1,71 +1,38 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-export default function CustomCursor() {
+export default function GlitchCursor() {
+  const crossRef = useRef(null)
   const dotRef = useRef(null)
-  const outlineRef = useRef(null)
+  const [hovering, setHovering] = useState(false)
 
   useEffect(() => {
-    const dot = dotRef.current
-    const outline = outlineRef.current
-    if (!dot || !outline) return
-
-    let mouseX = window.innerWidth / 2
-    let mouseY = window.innerHeight / 2
-    let outlineX = mouseX
-    let outlineY = mouseY
-
-    const onMouseMove = (e) => {
-      mouseX = e.clientX
-      mouseY = e.clientY
-      dot.style.left = `${mouseX}px`
-      dot.style.top = `${mouseY}px`
-    }
-
-    const animate = () => {
-      // Ease outline towards mouse
-      outlineX += (mouseX - outlineX) * 0.15
-      outlineY += (mouseY - outlineY) * 0.15
-      
-      if (outline) {
-        outline.style.left = `${outlineX}px`
-        outline.style.top = `${outlineY}px`
+    const move = (e) => {
+      if (dotRef.current) {
+        dotRef.current.style.left = e.clientX + 'px'
+        dotRef.current.style.top = e.clientY + 'px'
       }
-      requestAnimationFrame(animate)
-    }
-
-    const addHover = () => document.body.classList.add('cursor-hover')
-    const removeHover = () => document.body.classList.remove('cursor-hover')
-
-    // Attach to clickable elements dynamically
-    const handleMouseOver = (e) => {
-      if (e.target.closest('a, button, .clickable, .agency-card, input')) {
-        addHover()
+      if (crossRef.current) {
+        crossRef.current.style.left = e.clientX + 'px'
+        crossRef.current.style.top = e.clientY + 'px'
       }
     }
-    const handleMouseOut = (e) => {
-      if (e.target.closest('a, button, .clickable, .agency-card, input')) {
-        removeHover()
-      }
+    const over = (e) => {
+      const el = e.target
+      const isClickable = el.closest('button, a, [role="button"], .team-card, .clickable')
+      setHovering(!!isClickable)
     }
-
-    window.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseover', handleMouseOver)
-    document.addEventListener('mouseout', handleMouseOut)
-    
-    let animId = requestAnimationFrame(animate)
-
+    window.addEventListener('mousemove', move)
+    document.addEventListener('mouseover', over)
     return () => {
-      window.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseover', handleMouseOver)
-      document.removeEventListener('mouseout', handleMouseOut)
-      cancelAnimationFrame(animId)
+      window.removeEventListener('mousemove', move)
+      document.removeEventListener('mouseover', over)
     }
   }, [])
 
   return (
     <>
       <div ref={dotRef} className="cursor-dot" />
-      <div ref={outlineRef} className="cursor-outline" />
+      <div ref={crossRef} className={`cursor-crosshair ${hovering ? 'hovering' : ''}`} />
     </>
   )
 }
