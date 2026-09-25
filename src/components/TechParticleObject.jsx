@@ -15,7 +15,6 @@ attribute vec3 aPositionB;
 attribute vec3 aPositionC;
 attribute vec3 aPositionD;
 
-// Classic 3D Simplex Noise function
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 float snoise(vec3 v){
@@ -132,55 +131,80 @@ function sampleGeometry(geometry, count) {
   return points
 }
 
-function buildRocket() {
+// 01: CODING (Laptop)
+function buildLaptop() {
   const parts = []
-  const body = new THREE.CylinderGeometry(1.2, 1.2, 7, 32)
-  parts.push(body)
-  const nose = new THREE.ConeGeometry(1.2, 3, 32)
-  nose.translate(0, 5, 0)
-  parts.push(nose)
-  for (let i = 0; i < 4; i++) {
-    const fin = new THREE.BoxGeometry(0.2, 3, 2.5)
-    fin.translate(0, -2, 1.5)
-    fin.rotateY((i * Math.PI) / 2)
-    parts.push(fin)
-  }
-  const engine = new THREE.CylinderGeometry(0.8, 1.4, 1.5, 32)
-  engine.translate(0, -4.25, 0)
-  parts.push(engine)
+  // Base / Keyboard
+  const base = new THREE.BoxGeometry(8, 0.2, 5)
+  base.translate(0, -2, 0)
+  parts.push(base)
+  // Screen
+  const screen = new THREE.BoxGeometry(8, 5, 0.2)
+  screen.translate(0, 2.5, -2.5)
+  screen.rotateX(-0.2) // Tilted back
+  screen.translate(0, -2, 0)
+  parts.push(screen)
   
   const merged = mergeGeometries(parts)
-  // Tilt it so it looks dynamic
+  merged.rotateY(0.4)
   merged.rotateX(0.2)
-  merged.rotateZ(-0.2)
   return merged
 }
 
-function buildPlane() {
+// 02: DEVELOPMENT (Floating Code Screens)
+function buildScreens() {
   const parts = []
-  const fuselage = new THREE.CylinderGeometry(1, 1, 10, 32)
-  fuselage.rotateX(Math.PI / 2)
-  parts.push(fuselage)
-  const nose = new THREE.SphereGeometry(1, 32, 32)
-  nose.translate(0, 0, 5)
-  parts.push(nose)
-  const wings = new THREE.BoxGeometry(14, 0.2, 3)
-  wings.translate(0, 0, 1)
-  parts.push(wings)
-  const tail = new THREE.BoxGeometry(0.2, 3, 2)
-  tail.translate(0, 1.5, -4)
-  parts.push(tail)
-  const tailWings = new THREE.BoxGeometry(4, 0.2, 1.5)
-  tailWings.translate(0, 0, -4)
-  parts.push(tailWings)
   
+  // Screen 1 (Center Left)
+  const s1 = new THREE.BoxGeometry(5, 4, 0.1)
+  s1.translate(-2, 0, 1)
+  s1.rotateY(0.2)
+  parts.push(s1)
+  
+  // Screen 2 (Center Right, tilted)
+  const s2 = new THREE.BoxGeometry(4, 3.5, 0.1)
+  s2.translate(3, 1, -1)
+  s2.rotateY(-0.3)
+  parts.push(s2)
+  
+  // Screen 3 (Bottom Right)
+  const s3 = new THREE.BoxGeometry(3, 2.5, 0.1)
+  s3.translate(2, -2, 2)
+  s3.rotateY(-0.1)
+  parts.push(s3)
+
   const merged = mergeGeometries(parts)
-  merged.rotateY(Math.PI / 4)
-  merged.rotateX(-0.2)
   return merged
 }
 
-function buildComputer() {
+// 03: CLOUD & SERVERS
+function buildCloudServer() {
+  const parts = []
+  
+  // Cloud (Overlapping spheres)
+  const c1 = new THREE.SphereGeometry(2, 32, 32)
+  c1.translate(0, 3, 0)
+  parts.push(c1)
+  const c2 = new THREE.SphereGeometry(1.4, 32, 32)
+  c2.translate(-2, 2.5, 0)
+  parts.push(c2)
+  const c3 = new THREE.SphereGeometry(1.6, 32, 32)
+  c3.translate(2, 2.7, 0)
+  parts.push(c3)
+
+  // Servers (Stack of cylinders/boxes)
+  for(let i=0; i<4; i++) {
+    const server = new THREE.CylinderGeometry(2.2, 2.2, 0.8, 32)
+    server.translate(0, -1 - (i * 1.2), 0)
+    parts.push(server)
+  }
+
+  const merged = mergeGeometries(parts)
+  return merged
+}
+
+// 04: DEPLOY & MONITOR (Desktop PC)
+function buildDesktop() {
   const parts = []
   // Monitor
   const monitor = new THREE.BoxGeometry(7, 4.5, 0.5)
@@ -206,24 +230,8 @@ function buildComputer() {
   parts.push(mouse)
   
   const merged = mergeGeometries(parts)
-  merged.rotateY(-Math.PI / 6)
+  merged.rotateY(-0.3)
   return merged
-}
-
-function buildWall() {
-  const plane = new THREE.PlaneGeometry(30, 15, 100, 50)
-  const pos = plane.attributes.position
-  // Create a soundwave / mountain grid look
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i)
-    const y = pos.getY(i)
-    // Complex sine waves for data-vis look
-    let z = Math.sin(x * 0.5) * 2.0 + Math.sin(y * 0.8) * 1.5
-    z += Math.sin(x * 1.2 + y * 0.5) * 0.8
-    pos.setZ(i, z)
-  }
-  plane.computeVertexNormals()
-  return plane
 }
 
 // ─── REACT COMPONENT ───────────────────────────────────────────────────────
@@ -237,17 +245,17 @@ function ParticleMorphSystem() {
   const PARTICLE_COUNT = 80000
 
   useEffect(() => {
-    // Generate heavily detailed sampled points on mount
-    const rGeo = buildRocket()
-    const pGeo = buildPlane()
-    const cGeo = buildComputer()
-    const wGeo = buildWall()
+    // 01: Coding, 02: Development, 03: Cloud & Servers, 04: Deploy & Monitor
+    const geoA = buildLaptop()
+    const geoB = buildScreens()
+    const geoC = buildCloudServer()
+    const geoD = buildDesktop()
 
     setGeometries({
-      posA: sampleGeometry(rGeo, PARTICLE_COUNT),
-      posB: sampleGeometry(pGeo, PARTICLE_COUNT),
-      posC: sampleGeometry(cGeo, PARTICLE_COUNT),
-      posD: sampleGeometry(wGeo, PARTICLE_COUNT),
+      posA: sampleGeometry(geoA, PARTICLE_COUNT),
+      posB: sampleGeometry(geoB, PARTICLE_COUNT),
+      posC: sampleGeometry(geoC, PARTICLE_COUNT),
+      posD: sampleGeometry(geoD, PARTICLE_COUNT),
     })
   }, [])
 
@@ -274,8 +282,8 @@ function ParticleMorphSystem() {
       shaderRef.current.uniforms.uMouse.value.copy(mouseWorld.current)
     }
 
-    // Slow rotation
-    state.scene.rotation.y = scrollNormal * Math.PI * 0.1
+    // Slow cinematic rotation
+    state.scene.rotation.y = scrollNormal * Math.PI * 0.2
   })
 
   const uniforms = useMemo(() => ({
@@ -285,7 +293,7 @@ function ParticleMorphSystem() {
     uMouseRadius: { value: 3.0 }
   }), [])
 
-  if (!geometries) return null // Wait until sampling is done
+  if (!geometries) return null 
 
   return (
     <points>
