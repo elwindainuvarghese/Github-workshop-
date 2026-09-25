@@ -21,8 +21,13 @@ function SkillBar({ label, level, color, delay }) {
   )
 }
 
-function GlitchAvatar({ handle, color, size = 100 }) {
+function GlitchAvatar({ member, size = 100 }) {
   const [glitched, setGlitched] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  
+  const handle = member.handle
+  const color = member.color
+
   useEffect(() => {
     const t = setInterval(() => {
       setGlitched(true); setTimeout(() => setGlitched(false), 180)
@@ -31,27 +36,64 @@ function GlitchAvatar({ handle, color, size = 100 }) {
   }, [])
 
   return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+    <div 
+      style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 8, ease: 'linear' }}
         style={{ position: 'absolute', inset: -6, border: `1px solid ${color}30`, borderRadius: '50%', borderTopColor: color }} />
       <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 6, ease: 'linear' }}
         style={{ position: 'absolute', inset: -12, border: `1px dashed ${color}18`, borderRadius: '50%', borderRightColor: `${color}60` }} />
       <div style={{
         width: size, height: size, borderRadius: '50%',
-        background: `radial-gradient(circle at 35% 35%, ${color}30, #000)`,
+        background: member.image ? `url(${member.image}) center/cover` : `radial-gradient(circle at 35% 35%, ${color}30, #000)`,
         border: `2px solid ${color}`, boxShadow: `0 0 24px ${color}40, inset 0 0 16px ${color}10`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden',
       }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.3) 6px)', borderRadius: '50%', zIndex: 1 }} />
-        {glitched && (
+        {/* Holographic overlay */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.3) 6px)', borderRadius: '50%', zIndex: 1, pointerEvents: 'none' }} />
+        
+        {/* Fallback Handle Text if no image */}
+        {!member.image && glitched && (
           <>
             <span style={{ position: 'absolute', fontFamily: "'Orbitron'", fontWeight: 900, fontSize: size * 0.35, color: '#ff003c', left: '-3px', zIndex: 0, opacity: 0.7 }}>{handle.slice(0,2)}</span>
             <span style={{ position: 'absolute', fontFamily: "'Orbitron'", fontWeight: 900, fontSize: size * 0.35, color: '#00f5ff', left: '3px', zIndex: 0, opacity: 0.7 }}>{handle.slice(0,2)}</span>
           </>
         )}
-        <span style={{ fontFamily: "'Orbitron'", fontWeight: 900, fontSize: size * 0.32, color, textShadow: `0 0 20px ${color}`, position: 'relative', zIndex: 2 }}>
-          {handle.slice(0, 2)}
-        </span>
+        {!member.image && (
+          <span style={{ fontFamily: "'Orbitron'", fontWeight: 900, fontSize: size * 0.32, color, textShadow: `0 0 20px ${color}`, position: 'relative', zIndex: 2 }}>
+            {handle.slice(0, 2)}
+          </span>
+        )}
+
+        {/* Hover Social Overlay (Linkedin/Github) */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div 
+              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
+              animate={{ opacity: 1, backdropFilter: 'blur(6px)' }} 
+              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
+              transition={{ duration: 0.2 }}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}
+            >
+              {member.github && (
+                <a href={`https://github.com/${member.github}`} target="_blank" rel="noopener noreferrer" style={{ color: '#fff', zIndex: 10 }}>
+                  <motion.div whileHover={{ scale: 1.2, color: color, filter: `drop-shadow(0 0 8px ${color})` }} style={{ cursor: 'pointer', display: 'flex' }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                  </motion.div>
+                </a>
+              )}
+              {member.linkedin && (
+                <a href={member.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: '#fff', zIndex: 10 }}>
+                  <motion.div whileHover={{ scale: 1.2, color: color, filter: `drop-shadow(0 0 8px ${color})` }} style={{ cursor: 'pointer', display: 'flex' }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </motion.div>
+                </a>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
@@ -65,7 +107,6 @@ export default function TeamModal({ member, onClose }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
-    // Prevent body scroll when modal open
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
@@ -82,7 +123,7 @@ export default function TeamModal({ member, onClose }) {
         style={{ zIndex: 8000, padding: isMobile ? '12px' : '20px' }}
       >
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.97)', backdropFilter: 'blur(4px)' }} />
+          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(6px)' }} />
 
         {/* Grid BG */}
         <div style={{
@@ -98,19 +139,14 @@ export default function TeamModal({ member, onClose }) {
           exit={{ scale: 0.92, opacity: 0, filter: 'blur(6px)' }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           onClick={e => e.stopPropagation()}
+          className="member-modal"
           style={{
-            position: 'relative', zIndex: 2,
-            width: '100%', maxWidth: isMobile ? '100%' : '800px',
-            maxHeight: isMobile ? '92vh' : '88vh',
-            overflowY: 'auto',
-            background: '#030303',
-            border: `1px solid ${c}40`,
-            boxShadow: `0 0 50px ${c}18`,
-            borderRadius: '4px',
-            WebkitOverflowScrolling: 'touch',
+            maxWidth: '540px', width: '100%', margin: '0 auto', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(20px)',
+            border: `1px solid ${c}40`, boxShadow: `0 0 40px ${c}15, inset 0 0 20px ${c}05`,
+            position: 'relative', overflow: 'hidden',
           }}
         >
-          {/* Header */}
+          {/* Top Bar */}
           <div style={{
             padding: isMobile ? '12px 16px' : '14px 22px',
             borderBottom: `1px solid ${c}20`,
@@ -136,74 +172,58 @@ export default function TeamModal({ member, onClose }) {
 
           {/* Content */}
           <div style={{ padding: isMobile ? '20px 16px' : '28px 24px' }}>
-            {/* Top: avatar + info — always row, but shrink on mobile */}
+            {/* Top: avatar + info */}
             <div style={{ display: 'flex', gap: isMobile ? '16px' : '24px', alignItems: 'flex-start', marginBottom: isMobile ? '20px' : '28px' }}>
-              <GlitchAvatar handle={member.handle} color={c} size={avatarSize} />
+              <GlitchAvatar member={member} size={avatarSize} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
                   style={{ display: 'inline-block', padding: '3px 10px', border: `1px solid ${c}50`, background: `${c}10`, fontFamily: "'Orbitron'", fontSize: isMobile ? '8px' : '9px', fontWeight: 700, color: c, letterSpacing: '0.25em', marginBottom: '8px' }}>
                   {member.vibe}
                 </motion.div>
-                <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 }}
-                  style={{ fontFamily: "'Orbitron'", fontWeight: 900, fontSize: isMobile ? 'clamp(18px, 5vw, 28px)' : 'clamp(22px, 3vw, 34px)', color: '#fff', marginBottom: '4px', lineHeight: 1.1, wordBreak: 'break-word' }}>
+                <motion.h2 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+                  style={{ fontFamily: "'Orbitron'", fontWeight: 900, fontSize: isMobile ? '20px' : '28px', color: '#fff', letterSpacing: '-0.5px', marginBottom: '4px', textShadow: `0 0 20px ${c}40` }}>
                   {member.name}
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }}
-                  style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '12px', color: c }}>@{member.github}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '10px' }}>·</span>
-                  <span style={{ fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '10px' : '11px', color: 'rgba(255,255,255,0.35)' }}>{member.role}</span>
-                </motion.div>
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-                  style={{ display: 'flex', gap: isMobile ? '14px' : '20px', flexWrap: 'wrap' }}>
-                  {[{ k: 'COMMITS', v: member.commits.toLocaleString() }, { k: 'STREAK', v: `${member.streak}d` }, { k: 'STATUS', v: 'ONLINE' }].map(({ k, v }) => (
-                    <div key={k}>
-                      <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '8px', color: 'rgba(255,255,255,0.25)', letterSpacing: '0.25em' }}>{k}</div>
-                      <div style={{ fontFamily: "'Orbitron'", fontSize: isMobile ? '13px' : '15px', fontWeight: 700, color: c }}>{v}</div>
-                    </div>
-                  ))}
+                </motion.h2>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                  style={{ fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '13px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
+                  // {member.role}
                 </motion.div>
               </div>
             </div>
 
-            {/* Bio + Skills: stacked on mobile, two-col on desktop */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '16px' : '20px' }}>
-              {/* Bio */}
-              <div>
-                <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '9px', letterSpacing: '0.35em', color: `${c}60`, marginBottom: '10px' }}>▸ BIO.TXT</div>
-                <div style={{ background: '#000', border: `1px solid ${c}20`, padding: isMobile ? '12px' : '16px', borderRadius: '2px', fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{member.bio}</motion.span>
-                </div>
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
-                  style={{ marginTop: '12px', padding: isMobile ? '10px 12px' : '12px 14px', borderLeft: `3px solid ${c}`, background: `${c}06`, fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '12px', color: c, fontStyle: 'italic' }}>
-                  "{member.quote}"
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '28px' }}>
+              {[ { l: 'LIFETIME COMMITS', v: member.commits }, { l: 'CURRENT STREAK', v: `${member.streak} DAYS` } ].map((s, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '12px', borderRadius: '4px' }}>
+                  <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '9px', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.15em', marginBottom: '6px' }}>{s.l}</div>
+                  <div style={{ fontFamily: "'Orbitron'", fontSize: isMobile ? '16px' : '20px', fontWeight: 700, color: c }}>{s.v}</div>
                 </motion.div>
-              </div>
-
-              {/* Skills */}
-              <div>
-                <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '9px', letterSpacing: '0.35em', color: `${c}60`, marginBottom: '10px' }}>▸ SKILLS.JSON</div>
-                <div style={{ background: '#000', border: `1px solid ${c}20`, padding: isMobile ? '12px' : '16px', borderRadius: '2px' }}>
-                  {member.skills.map((skill, i) => (
-                    <SkillBar key={skill} label={skill} level={member.skillLevels[i]} color={c} delay={0.35 + i * 0.09} />
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
 
-            {/* Actions */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
-              style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <a href={`https://github.com/${member.github}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                <motion.div whileHover={{ boxShadow: `0 0 16px ${c}50` }}
-                  style={{ padding: isMobile ? '10px 18px' : '10px 22px', border: `1px solid ${c}40`, background: `${c}08`, color: c, fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '12px', letterSpacing: '0.15em', cursor: 'pointer', transition: 'all 0.2s' }}>
-                  ▸ GITHUB
-                </motion.div>
-              </a>
-              <motion.div whileHover={{ boxShadow: '0 0 16px rgba(255,0,60,0.3)' }} onClick={onClose}
-                style={{ padding: isMobile ? '10px 18px' : '10px 22px', border: '1px solid rgba(255,0,60,0.3)', background: 'rgba(255,0,60,0.06)', color: '#ff003c', fontFamily: "'Share Tech Mono'", fontSize: isMobile ? '11px' : '12px', letterSpacing: '0.15em', cursor: 'pointer', transition: 'all 0.2s' }}>
-                ✕ CLOSE
-              </motion.div>
+            {/* Bio */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ marginBottom: '28px' }}>
+              <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', marginBottom: '10px' }}>SYSTEM.BIO_DATA</div>
+              <p style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: isMobile ? '13px' : '15px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                {member.bio}
+              </p>
+            </motion.div>
+
+            {/* Skills */}
+            <div>
+              <div style={{ fontFamily: "'Share Tech Mono'", fontSize: '10px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.15em', marginBottom: '16px' }}>CORE.COMPETENCIES</div>
+              <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                {member.skills.map((s, i) => (
+                  <SkillBar key={s} label={s} level={member.skillLevels[i]} color={c} delay={0.7 + i * 0.1} />
+                ))}
+              </div>
+            </div>
+            
+            {/* Quote */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+              style={{ marginTop: '28px', textAlign: 'center', fontStyle: 'italic', fontFamily: "'Space Grotesk'", fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+              "{member.quote}"
             </motion.div>
           </div>
         </motion.div>

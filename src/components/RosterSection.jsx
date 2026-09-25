@@ -158,20 +158,54 @@ export default function RosterSection({ data, loading, error }) {
               ))}
             </div>
           ) : error ? <ErrorBlock /> : (
-            <div style={{ overflow: 'hidden', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '40px', background: 'linear-gradient(to right, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '40px', background: 'linear-gradient(to left, #000, transparent)', zIndex: 2, pointerEvents: 'none' }} />
-              <div className="marquee-track" style={{ gap: '10px' }}>
-                {[...participants, ...participants].map((p, i) => (
-                  <div key={i} className="participant-pill" style={{ padding: isMobile ? '6px 12px' : '8px 18px' }}>
-                    <span style={{ width: '22px', height: '22px', borderRadius: '2px', background: 'rgba(0,245,255,0.1)', border: '1px solid rgba(0,245,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#00f5ff', fontFamily: "'Share Tech Mono'", flexShrink: 0 }}>
+            <div style={{ position: 'relative', padding: '40px 0' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: '16px',
+                perspective: '1000px'
+              }}>
+                {participants.map((p, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, rotateX: 90, y: 50, scale: 0.8 }}
+                    whileInView={{ opacity: 1, rotateX: 0, y: 0, scale: 1 }}
+                    viewport={{ once: true, margin: '-20px' }}
+                    transition={{ duration: 0.5, delay: (i % 8) * 0.05, type: 'spring', stiffness: 100 }}
+                    whileHover={{ scale: 1.05, zIndex: 10, y: -5, boxShadow: '0 10px 30px rgba(0,245,255,0.2)', border: '1px solid rgba(0,245,255,0.8)' }}
+                    style={{
+                      background: 'rgba(0,20,30,0.6)',
+                      border: '1px solid rgba(0,245,255,0.2)',
+                      borderRadius: '4px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      backdropFilter: 'blur(8px)',
+                      cursor: 'crosshair',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transformStyle: 'preserve-3d'
+                    }}
+                  >
+                    {/* Scanline hover effect */}
+                    <motion.div 
+                      initial={{ top: '-100%' }}
+                      whileHover={{ top: '100%' }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                      style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: '#00f5ff', opacity: 0.5, boxShadow: '0 0 10px #00f5ff' }}
+                    />
+                    
+                    <div style={{ width: '28px', height: '28px', borderRadius: '4px', background: 'rgba(0,245,255,0.1)', border: '1px solid rgba(0,245,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 900, color: '#00f5ff', fontFamily: "'Orbitron'", flexShrink: 0, boxShadow: 'inset 0 0 10px rgba(0,245,255,0.2)' }}>
                       {(p.name || '?')[0]}
-                    </span>
-                    <span style={{ fontSize: isMobile ? '11px' : '13px' }}>{p.name}</span>
-                    {!isMobile && p.github && (
-                      <span style={{ fontSize: '10px', color: 'rgba(0,245,255,0.35)', fontFamily: "'Share Tech Mono'" }}>@{p.github}</span>
-                    )}
-                  </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '12px', fontFamily: "'Space Grotesk'", fontWeight: 700, color: '#fff', letterSpacing: '0.5px' }}>{p.name}</span>
+                      {p.github && (
+                        <span style={{ fontSize: '9px', color: 'rgba(0,245,255,0.6)', fontFamily: "'Share Tech Mono'", marginTop: '2px' }}>@{p.github}</span>
+                      )}
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
