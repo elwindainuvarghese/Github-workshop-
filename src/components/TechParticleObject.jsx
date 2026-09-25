@@ -13,11 +13,15 @@ uniform float uMouseRadius;
 attribute vec3 aPositionB;
 attribute vec3 aPositionC;
 attribute vec3 aPositionD;
+attribute float aRandom; // Unique random value per particle (0.0 to 1.0)
 
+varying float vAlpha;
+
+// Simplex Noise
 vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
 vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 float snoise(vec3 v){
-  const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
+  const vec2  C = vec2(1.0/6.0, 1.0/3.0);
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
   vec3 i  = floor(v + dot(v, C.yyy) );
   vec3 x0 = v - i + dot(i, C.xxx) ;
@@ -29,10 +33,7 @@ float snoise(vec3 v){
   vec3 x2 = x0 - i2 + 2.0 * C.xxx;
   vec3 x3 = x0 - 1.0 + 3.0 * C.xxx;
   i = mod(i, 289.0 );
-  vec4 p = permute( permute( permute(
-             i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
-           + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+  vec4 p = permute( permute( permute( i.z + vec4(0.0, i1.z, i2.z, 1.0 )) + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
   float n_ = 1.0/7.0;
   vec3  ns = n_ * D.wyz - D.xzx;
   vec4 j = p - 49.0 * floor(p * ns.z *ns.z);
@@ -53,33 +54,58 @@ float snoise(vec3 v){
   vec3 p2 = vec3(a1.xy,h.z);
   vec3 p3 = vec3(a1.zw,h.w);
   vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-  p0 *= norm.x;
-  p1 *= norm.y;
-  p2 *= norm.z;
-  p3 *= norm.w;
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
   vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
   m = m * m;
-  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
-                                dot(p2,x2), dot(p3,x3) ) );
+  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+}
+
+// Function to rotate a vector around the Y axis (for fluid morph swirling)
+vec3 rotateY(vec3 v, float angle) {
+  float s = sin(angle);
+  float c = cos(angle);
+  return vec3(v.x * c - v.z * s, v.y, v.x * s + v.z * c);
 }
 
 void main() {
   vec3 targetPos;
   
+  // Custom fluid transition variables
+  float t; 
+  vec3 startPos;
+  vec3 endPos;
+
+  // 1. Determine which shapes to morph between
   if (uProgress < 1.0) {
-    float t = smoothstep(0.0, 1.0, uProgress);
-    targetPos = mix(position, aPositionB, t);
+    t = smoothstep(0.0, 1.0, uProgress);
+    startPos = position; endPos = aPositionB;
   } else if (uProgress < 2.0) {
-    float t = smoothstep(0.0, 1.0, uProgress - 1.0);
-    targetPos = mix(aPositionB, aPositionC, t);
+    t = smoothstep(0.0, 1.0, uProgress - 1.0);
+    startPos = aPositionB; endPos = aPositionC;
   } else {
-    float t = smoothstep(0.0, 1.0, uProgress - 2.0);
-    targetPos = mix(aPositionC, aPositionD, t);
+    t = smoothstep(0.0, 1.0, uProgress - 2.0);
+    startPos = aPositionC; endPos = aPositionD;
   }
 
-  // Drift
-  float noiseFreq = 0.2;
-  float noiseAmp = 0.2;
+  // 2. FLUID MORPHING LOGIC (Swirling & Exploding during transition)
+  // Instead of a straight mathematical line, particles burst outward and swirl as they travel
+  float morphIntensity = sin(t * 3.14159); // 0 at start, 1 in middle, 0 at end
+  vec3 midPos = mix(startPos, endPos, t);
+  
+  // Add a chaotic swirl during the transition based on the particle's random seed
+  float swirlAngle = morphIntensity * (aRandom * 10.0 - 5.0); // Spin left or right
+  vec3 swirlingPos = rotateY(midPos, swirlAngle);
+  
+  // Add an explosive vertical/outward burst during the middle of the transition
+  swirlingPos.y += morphIntensity * (aRandom * 4.0 - 2.0);
+  swirlingPos.x += morphIntensity * (aRandom * 4.0 - 2.0);
+
+  targetPos = swirlingPos;
+
+  // 3. ORGANIC DRIFT (Breathing)
+  // Constant fluid drift even when still
+  float noiseFreq = 0.15;
+  float noiseAmp = 0.25;
   vec3 noisePos = vec3(
     snoise(targetPos * noiseFreq + uTime * 0.2),
     snoise(targetPos * noiseFreq + uTime * 0.2 + 100.0),
@@ -87,52 +113,62 @@ void main() {
   );
   targetPos += noisePos * noiseAmp;
 
-  // Repulsion
+  // 4. MOUSE REPULSION (Fluid Physics)
   float dist = distance(targetPos, uMouse);
   if (dist < uMouseRadius) {
     vec3 dir = normalize(targetPos - uMouse);
     float force = (uMouseRadius - dist) / uMouseRadius;
-    force = pow(force, 2.0);
-    targetPos += dir * force * 1.5;
+    force = pow(force, 2.0); // Exponential spring curve
+    targetPos += dir * force * 2.5; // Stronger push
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
-  gl_PointSize = (10.0 / -mvPosition.z);
+  
+  // 5. NATURAL PARTICLE SIZE VARIANCE
+  // Some particles are tiny dust, others are glowing cores
+  float baseSize = 8.0 + (aRandom * 12.0); 
+  gl_PointSize = (baseSize / -mvPosition.z);
+  
   gl_Position = projectionMatrix * mvPosition;
+
+  // Twinkling opacity based on time and random seed
+  vAlpha = 0.5 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.4);
 }
 `
 
 const fragmentShader = `
+varying float vAlpha;
+
 void main() {
   float dist = length(gl_PointCoord - vec2(0.5));
-  if (dist > 0.5) discard;
+  if (dist > 0.5) discard; // Circular particle
+  
+  // Strict Neon Terminal Green
   vec3 neonGreen = vec3(0.0, 1.0, 0.255);
-  float alpha = smoothstep(0.5, 0.1, dist);
-  gl_FragColor = vec4(neonGreen, alpha * 0.9);
+  
+  // Soft, natural edge blur
+  float alpha = smoothstep(0.5, 0.1, dist) * vAlpha;
+  
+  gl_FragColor = vec4(neonGreen, alpha);
 }
 `
 
-// ─── WIREFRAME EDGE SAMPLER ────────────────────────────────────────────────
+// ─── ORGANIC WIREFRAME EDGE SAMPLER ────────────────────────────────────────
 
-// Instead of sampling the flat surface (which looks like a solid blob without lighting),
-// this function extracts the sharp 3D wireframe edges of the geometry, and scatters
-// the particles strictly along the edges. This creates a brilliant glowing hologram look!
-function sampleEdges(geometry, count) {
-  const edgesGeometry = new THREE.EdgesGeometry(geometry, 15) // 15 degree threshold
+// Extracts the edges but adds a slight, randomized natural "fuzz" to the lines
+// so they look like glowing clouds forming a shape rather than rigid math vectors.
+function sampleOrganicEdges(geometry, count) {
+  const edgesGeometry = new THREE.EdgesGeometry(geometry, 15)
   const edgePositions = edgesGeometry.attributes.position
   const points = new Float32Array(count * 3)
   
   const lineSegmentsCount = edgePositions.count / 2
   
-  if (lineSegmentsCount === 0) {
-    return new Float32Array(count * 3)
-  }
+  if (lineSegmentsCount === 0) return new Float32Array(count * 3)
 
   for (let i = 0; i < count; i++) {
-    // Pick a random edge line segment
     const lineIndex = Math.floor(Math.random() * lineSegmentsCount)
     
-    // Get the two endpoints of the line
     const v0x = edgePositions.getX(lineIndex * 2)
     const v0y = edgePositions.getY(lineIndex * 2)
     const v0z = edgePositions.getZ(lineIndex * 2)
@@ -141,11 +177,22 @@ function sampleEdges(geometry, count) {
     const v1y = edgePositions.getY(lineIndex * 2 + 1)
     const v1z = edgePositions.getZ(lineIndex * 2 + 1)
     
-    // Pick a random point strictly along that line segment
     const t = Math.random()
-    points[i * 3 + 0] = v0x + (v1x - v0x) * t
-    points[i * 3 + 1] = v0y + (v1y - v0y) * t
-    points[i * 3 + 2] = v0z + (v1z - v0z) * t
+    
+    // Base position on the edge
+    let px = v0x + (v1x - v0x) * t
+    let py = v0y + (v1y - v0y) * t
+    let pz = v0z + (v1z - v0z) * t
+
+    // Add natural organic fuzz/scatter (a Gaussian-like distribution)
+    const scatter = 0.12 // Scatter radius
+    px += (Math.random() - 0.5) * scatter
+    py += (Math.random() - 0.5) * scatter
+    pz += (Math.random() - 0.5) * scatter
+
+    points[i * 3 + 0] = px
+    points[i * 3 + 1] = py
+    points[i * 3 + 2] = pz
   }
   
   return points
@@ -153,7 +200,6 @@ function sampleEdges(geometry, count) {
 
 // ─── GEOMETRY BUILDERS ──────────────────────────────────────────────────────
 
-// 01: CODING (Laptop)
 function buildLaptop() {
   const parts = []
   const base = new THREE.BoxGeometry(10, 0.4, 7)
@@ -174,7 +220,6 @@ function buildLaptop() {
   return merged
 }
 
-// 02: DEVELOPMENT (Floating Hologram Code Screens)
 function buildScreens() {
   const parts = []
   const s1 = new THREE.BoxGeometry(6, 4, 0.2)
@@ -195,22 +240,18 @@ function buildScreens() {
   return mergeGeometries(parts)
 }
 
-// 03: CLOUD & SERVERS
 function buildCloudServer() {
   const parts = []
-  // Instead of a sphere cloud, build an iconic tech grid server rack
   const rack = new THREE.BoxGeometry(5, 10, 4)
   rack.translate(0, -1, 0)
   parts.push(rack)
   
-  // Server blades
   for(let i=0; i<6; i++) {
     const blade = new THREE.BoxGeometry(4.5, 0.5, 4.2)
     blade.translate(0, 3 - (i * 1.5), 0)
     parts.push(blade)
   }
   
-  // Floating data nodes around it
   for(let i=0; i<8; i++) {
     const node = new THREE.BoxGeometry(0.8, 0.8, 0.8)
     node.translate((Math.random()-0.5)*12, (Math.random()-0.5)*12, (Math.random()-0.5)*12)
@@ -222,7 +263,6 @@ function buildCloudServer() {
   return merged
 }
 
-// 04: DEPLOY & MONITOR (Desktop PC)
 function buildDesktop() {
   const parts = []
   const monitor = new THREE.BoxGeometry(8, 5, 0.4)
@@ -255,61 +295,72 @@ function ParticleMorphSystem() {
   const mouseWorld = useRef(new THREE.Vector3(0, 0, 0))
   const { camera } = useThree()
   const [geometries, setGeometries] = useState(null)
+  const [randoms, setRandoms] = useState(null)
   
-  // 50,000 particles is perfect for sharp glowing wireframes
-  const PARTICLE_COUNT = 50000
+  // Dense count for rich clouds
+  const PARTICLE_COUNT = 65000
 
   useEffect(() => {
-    // Generate the 4 shapes
     const geoA = buildLaptop()
     const geoB = buildScreens()
     const geoC = buildCloudServer()
     const geoD = buildDesktop()
 
-    // Sample strictly their edges to create holographic 3D wireframes
     setGeometries({
-      posA: sampleEdges(geoA, PARTICLE_COUNT),
-      posB: sampleEdges(geoB, PARTICLE_COUNT),
-      posC: sampleEdges(geoC, PARTICLE_COUNT),
-      posD: sampleEdges(geoD, PARTICLE_COUNT),
+      posA: sampleOrganicEdges(geoA, PARTICLE_COUNT),
+      posB: sampleOrganicEdges(geoB, PARTICLE_COUNT),
+      posC: sampleOrganicEdges(geoC, PARTICLE_COUNT),
+      posD: sampleOrganicEdges(geoD, PARTICLE_COUNT),
     })
+
+    // Generate unique random seed for each particle
+    const randArray = new Float32Array(PARTICLE_COUNT)
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      randArray[i] = Math.random()
+    }
+    setRandoms(randArray)
   }, [])
 
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
   const plane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), [])
 
   useFrame((state, delta) => {
-    if (!shaderRef.current || !geometries) return
+    if (!shaderRef.current || !geometries || !randoms) return
 
-    shaderRef.current.uniforms.uTime.value += delta
+    // Limit delta to prevent huge jumps if tab is inactive
+    const safeDelta = Math.min(delta, 0.1)
+    shaderRef.current.uniforms.uTime.value += safeDelta
 
     const maxScroll = document.body.scrollHeight - window.innerHeight
     const scrollNormal = maxScroll > 0 ? Math.max(0, Math.min(1, window.scrollY / maxScroll)) : 0
     const targetProgress = scrollNormal * 3.0 
     
-    shaderRef.current.uniforms.uProgress.value += (targetProgress - shaderRef.current.uniforms.uProgress.value) * 0.05
+    // Slower, more natural interpolation for scroll mapping
+    shaderRef.current.uniforms.uProgress.value += (targetProgress - shaderRef.current.uniforms.uProgress.value) * 0.03
 
     raycaster.setFromCamera(state.mouse, camera)
     const intersectPoint = new THREE.Vector3()
     raycaster.ray.intersectPlane(plane, intersectPoint)
     
     if (intersectPoint) {
-      mouseWorld.current.lerp(intersectPoint, 0.1)
+      // Natural, slightly slower mouse following
+      mouseWorld.current.lerp(intersectPoint, 0.08)
       shaderRef.current.uniforms.uMouse.value.copy(mouseWorld.current)
     }
 
-    // Slow cinematic rotation
-    state.scene.rotation.y = scrollNormal * Math.PI * 0.2
+    // Natural fluid breathing rotation
+    state.scene.rotation.y = scrollNormal * Math.PI * 0.15 + Math.sin(state.clock.elapsedTime * 0.2) * 0.05
+    state.scene.rotation.x = Math.cos(state.clock.elapsedTime * 0.15) * 0.05
   })
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
     uMouse: { value: new THREE.Vector3() },
-    uMouseRadius: { value: 3.0 }
+    uMouseRadius: { value: 4.0 }
   }), [])
 
-  if (!geometries) return null 
+  if (!geometries || !randoms) return null 
 
   return (
     <points>
@@ -318,6 +369,7 @@ function ParticleMorphSystem() {
         <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={geometries.posB} itemSize={3} />
         <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={geometries.posC} itemSize={3} />
         <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={geometries.posD} itemSize={3} />
+        <bufferAttribute attach="attributes-aRandom" count={PARTICLE_COUNT} array={randoms} itemSize={1} />
       </bufferGeometry>
       <shaderMaterial
         ref={shaderRef}
