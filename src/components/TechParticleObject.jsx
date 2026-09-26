@@ -352,8 +352,8 @@ function ParticleMorphSystem() {
   const [geometries, setGeometries] = useState(null)
   const [randoms, setRandoms] = useState(null)
   
-  // Dense count for rich clouds
-  const PARTICLE_COUNT = 65000
+  // Dense count for desktop, adaptive count for mobile performance
+  const PARTICLE_COUNT = window.innerWidth < 768 ? 25000 : 65000
 
   useEffect(() => {
     const geoA = buildLaptop()
@@ -409,10 +409,10 @@ function ParticleMorphSystem() {
 
     // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    // On mobile, scale it to 65% and move it to the bottom-middle. On desktop, full size and move to the right.
-    state.scene.scale.setScalar(isMobile ? 0.65 : 1.1)
+    // On mobile, scale it down to fit in the 40vh visual gap and center it. On desktop, full size and move to the right.
+    state.scene.scale.setScalar(isMobile ? 0.55 : 1.1)
     state.scene.position.x = isMobile ? 0 : 4.5
-    state.scene.position.y = isMobile ? -1.0 : -0.5
+    state.scene.position.y = isMobile ? -0.2 : -0.5
     
     // Decay pulse
     shaderRef.current.uniforms.uPulse.value = THREE.MathUtils.lerp(shaderRef.current.uniforms.uPulse.value, 0.0, 0.05)
