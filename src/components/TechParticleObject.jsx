@@ -339,10 +339,10 @@ function ParticleMorphSystem() {
 
     // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    // On mobile, scale it down to 40% and move it up. On desktop, scale to 70% and move it far left.
-    state.scene.scale.setScalar(isMobile ? 0.35 : 0.65)
-    state.scene.position.x = isMobile ? 0 : -5.0
-    state.scene.position.y = isMobile ? 3.0 : 0
+    // On mobile, scale it down to 35% and move it up. On desktop, scale to 85% and move it left & up.
+    state.scene.scale.setScalar(isMobile ? 0.35 : 0.85)
+    state.scene.position.x = isMobile ? 0 : -4.0
+    state.scene.position.y = isMobile ? 3.0 : 1.0
   })
 
   const uniforms = useMemo(() => ({

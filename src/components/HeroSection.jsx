@@ -66,7 +66,7 @@ function GlitchTitle({ isMobile }) {
     return () => clearTimeout(t)
   }, [])
 
-  const fontSize = isMobile ? 'clamp(40px, 15vw, 60px)' : 'clamp(60px, 8vw, 110px)'
+  const fontSize = isMobile ? 'clamp(32px, 12vw, 60px)' : 'clamp(36px, 4.5vw, 90px)'
   const offset = glitching ? (isMobile ? '2px' : '4px') : (isMobile ? '1px' : '2px')
 
   return (
@@ -77,7 +77,7 @@ function GlitchTitle({ isMobile }) {
         color: '#ff003c', opacity: glitching ? 0.7 : 0.3,
         pointerEvents: 'none',
         fontFamily: "'Orbitron', monospace", fontWeight: 900,
-        fontSize, lineHeight: 0.9, letterSpacing: '-2px',
+        fontSize, lineHeight: 1.0, letterSpacing: '-1px',
         whiteSpace: 'pre-line', filter: 'blur(0.5px)',
       }}>
         {display.join('\n')}
@@ -88,7 +88,7 @@ function GlitchTitle({ isMobile }) {
         color: '#00f5ff', opacity: glitching ? 0.7 : 0.3,
         pointerEvents: 'none',
         fontFamily: "'Orbitron', monospace", fontWeight: 900,
-        fontSize, lineHeight: 0.9, letterSpacing: '-2px',
+        fontSize, lineHeight: 1.0, letterSpacing: '-1px',
         whiteSpace: 'pre-line', filter: 'blur(0.5px)',
       }}>
         {display.join('\n')}
@@ -96,7 +96,7 @@ function GlitchTitle({ isMobile }) {
       {/* Main */}
       <div style={{
         fontFamily: "'Orbitron', monospace", fontWeight: 900,
-        fontSize, lineHeight: 0.9, letterSpacing: '-2px',
+        fontSize, lineHeight: 1.0, letterSpacing: '-1px',
         color: '#00ff41', whiteSpace: 'pre-line',
         textShadow: '0 0 20px rgba(0,255,65,0.4)',
       }}>
