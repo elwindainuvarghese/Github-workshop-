@@ -337,9 +337,12 @@ function ParticleMorphSystem() {
     state.scene.rotation.y = scrollNormal * Math.PI * 0.15 + Math.sin(state.clock.elapsedTime * 0.2) * 0.05
     state.scene.rotation.x = Math.cos(state.clock.elapsedTime * 0.15) * 0.05
 
-    // Shift to the left for the Hero Section Layout
+    // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    state.scene.position.x = isMobile ? 0 : -3.5
+    // On mobile, scale it down to 40% and move it up. On desktop, scale to 70% and move it far left.
+    state.scene.scale.setScalar(isMobile ? 0.35 : 0.65)
+    state.scene.position.x = isMobile ? 0 : -5.0
+    state.scene.position.y = isMobile ? 3.0 : 0
   })
 
   const uniforms = useMemo(() => ({

@@ -66,7 +66,7 @@ function GlitchTitle({ isMobile }) {
     return () => clearTimeout(t)
   }, [])
 
-  const fontSize = isMobile ? 'clamp(48px, 15vw, 70px)' : 'clamp(70px, 8vw, 130px)'
+  const fontSize = isMobile ? 'clamp(40px, 15vw, 60px)' : 'clamp(60px, 8vw, 110px)'
   const offset = glitching ? (isMobile ? '2px' : '4px') : (isMobile ? '1px' : '2px')
 
   return (
@@ -131,16 +131,6 @@ function FloatingLabel({ text, delay, yOffset }) {
 
 export default function HeroSection() {
   const isMobile = useIsMobile()
-  const sectionRef = useRef(null)
-  
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start start", "end start"]
-  })
-
-  // Terminal slides in from bottom left as you scroll down
-  const terminalY = useTransform(scrollYProgress, [0, 0.5], [100, 0])
-  const terminalOpacity = useTransform(scrollYProgress, [0, 0.3], [0, 1])
 
   const TERMINAL_LINES = [
     '$ git init workshop',
@@ -157,12 +147,12 @@ export default function HeroSection() {
   const { lines: typedLines } = useTyping(TERMINAL_LINES, 50, 800)
 
   return (
-    <section ref={sectionRef} className="hero-section" style={{
+    <section className="hero-section" style={{
       minHeight: '100vh',
       display: 'flex',
       flexDirection: isMobile ? 'column' : 'row',
       position: 'relative',
-      padding: isMobile ? '100px 16px 40px' : '40px',
+      padding: isMobile ? '60px 16px 40px' : '40px',
       overflow: 'hidden',
       pointerEvents: 'none'
     }}>
@@ -170,25 +160,28 @@ export default function HeroSection() {
       {/* Background gradients to frame the tech */}
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 75% 40%, rgba(0,255,65,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
-      {/* LEFT SIDE: Terminal (Laptop is handled by TechParticleObject Canvas underneath) */}
+      {/* LEFT SIDE: Terminal */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-end',
+        justifyContent: isMobile ? 'center' : 'flex-end',
         alignItems: isMobile ? 'center' : 'flex-start',
         position: 'relative',
         zIndex: 10,
-        pointerEvents: 'none', // let mouse pass through to canvas
-        paddingBottom: isMobile ? '40px' : '80px',
-        paddingLeft: isMobile ? '0' : '40px'
+        pointerEvents: 'none',
+        paddingBottom: isMobile ? '20px' : '80px',
+        paddingLeft: isMobile ? '0' : '40px',
+        order: isMobile ? 2 : 1, // Terminal below text on mobile
+        marginTop: isMobile ? 'auto' : '0' // Push to bottom on mobile
       }}>
         
         {/* The Terminal Window */}
         <motion.div
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
           style={{
-            y: terminalY,
-            opacity: terminalOpacity,
             width: '100%',
             maxWidth: '540px',
             pointerEvents: 'auto'
@@ -204,7 +197,7 @@ export default function HeroSection() {
           <div style={{ padding: '20px', minHeight: '180px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
             {typedLines.map((line, i) => (
               <div key={i} style={{
-                fontSize: '13px',
+                fontSize: isMobile ? '10px' : '13px',
                 lineHeight: 1.8,
                 color: line.startsWith('$') ? '#00ff41' : 'rgba(255,255,255,0.7)',
                 fontFamily: "'Share Tech Mono', monospace",
@@ -226,24 +219,30 @@ export default function HeroSection() {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: isMobile ? 'flex-end' : 'center',
         alignItems: isMobile ? 'center' : 'flex-end',
         position: 'relative',
         zIndex: 10,
         pointerEvents: 'none',
-        paddingRight: isMobile ? '0' : '40px'
+        paddingRight: isMobile ? '0' : '40px',
+        order: isMobile ? 1 : 2, // Text above terminal on mobile
+        paddingTop: isMobile ? '280px' : '0' // Push text down to make room for laptop on mobile
       }}>
         
         {/* Floating Labels Cloud */}
-        <div style={{ position: 'absolute', top: '15%', right: isMobile ? '10%' : '-10%', opacity: 0.6, pointerEvents: 'none' }}>
-          <div style={{ transform: 'rotate(15deg)' }}><FloatingLabel text="Code Review" delay={0.5} yOffset={-15} /></div>
-        </div>
-        <div style={{ position: 'absolute', bottom: '25%', right: isMobile ? '80%' : '60%', opacity: 0.5, pointerEvents: 'none' }}>
-          <div style={{ transform: 'rotate(-10deg)' }}><FloatingLabel text="CI/CD" delay={1.2} yOffset={10} /></div>
-        </div>
-        <div style={{ position: 'absolute', top: '35%', right: isMobile ? '60%' : '80%', opacity: 0.7, pointerEvents: 'none' }}>
-          <FloatingLabel text="Git Flow" delay={0} yOffset={-20} />
-        </div>
+        {!isMobile && (
+          <>
+            <div style={{ position: 'absolute', top: '15%', right: '-10%', opacity: 0.6, pointerEvents: 'none' }}>
+              <div style={{ transform: 'rotate(15deg)' }}><FloatingLabel text="Code Review" delay={0.5} yOffset={-15} /></div>
+            </div>
+            <div style={{ position: 'absolute', bottom: '25%', right: '60%', opacity: 0.5, pointerEvents: 'none' }}>
+              <div style={{ transform: 'rotate(-10deg)' }}><FloatingLabel text="CI/CD" delay={1.2} yOffset={10} /></div>
+            </div>
+            <div style={{ position: 'absolute', top: '35%', right: '80%', opacity: 0.7, pointerEvents: 'none' }}>
+              <FloatingLabel text="Git Flow" delay={0} yOffset={-20} />
+            </div>
+          </>
+        )}
 
         <motion.div
           initial={{ opacity: 0, x: 50 }}
@@ -262,12 +261,12 @@ export default function HeroSection() {
           style={{
             fontFamily: "'Orbitron'",
             fontWeight: 800,
-            fontSize: isMobile ? '16px' : '24px',
+            fontSize: isMobile ? '12px' : '24px',
             marginTop: '16px',
             background: 'linear-gradient(90deg, #00ff41, #00f5ff, #ff003c, #a855f7)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            letterSpacing: '2px',
+            letterSpacing: isMobile ? '1px' : '2px',
             textAlign: isMobile ? 'center' : 'right'
           }}
         >
