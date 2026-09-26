@@ -105,25 +105,24 @@ void main() {
   );
   targetPos += noisePos * noiseAmp;
 
-  // Hover Interaction (The Spectacular Bulge)
+  // Hover Interaction (Subtle Magnetic Scatter)
   float dist = distance(targetPos.xy, uMouse.xy);
   if (dist < uMouseRadius) {
     float force = (uMouseRadius - dist) / uMouseRadius;
-    force = pow(force, 1.5); // Wider, softer falloff
-    
-    // Intense antigravity Z-push
-    targetPos.z += force * 10.0;
-    
-    // Splatter outwards from center of touch
-    targetPos.x += (targetPos.x - uMouse.x) * force * 3.0;
-    targetPos.y += (targetPos.y - uMouse.y) * force * 3.0;
+    force = pow(force, 2.0); 
+    // Gently push away from mouse center in a circular pattern
+    vec2 dir = normalize(targetPos.xy - uMouse.xy);
+    targetPos.x += dir.x * force * 1.5;
+    targetPos.y += dir.y * force * 1.5;
+    // Add subtle chaotic scatter on Z
+    targetPos.z += (aRandom - 0.5) * force * 2.0;
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
-  float baseSize = 12.0 + (aRandom * 16.0); // Made particles bigger
+  float baseSize = 10.0 + (aRandom * 14.0); 
   gl_PointSize = (baseSize / -mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
-  vAlpha = 0.5 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.4);
+  vAlpha = 0.4 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.5);
 }
 `
 
@@ -211,51 +210,46 @@ function sampleOrganicEdges(geometry, count) {
 
 function buildLaptop() {
   const parts = []
-  const base = new THREE.BoxGeometry(10, 0.4, 7)
-  base.translate(0, -3, 0)
+  
+  // Base of laptop
+  const base = new THREE.BoxGeometry(12, 0.4, 8)
+  base.translate(0, -3.5, 0)
   parts.push(base)
   
-  const screen = new THREE.BoxGeometry(10, 6, 0.4)
-  screen.translate(0, 3, -3.5)
+  // Screen of laptop
+  const screen = new THREE.BoxGeometry(12, 7.5, 0.4)
+  screen.translate(0, 3.75, 0) // move pivot to bottom
+  screen.rotateX(-0.15) // tilt back
+  screen.translate(0, -3.5, -4.0) // position at back of base
+  parts.push(screen)
   
-  // Create "Code" lines on the screen so it isn't empty!
-  for(let i=0; i<7; i++) {
-    const lineWidth = 1.5 + Math.random() * 4.0;
-    const line = new THREE.BoxGeometry(lineWidth, 0.15, 0.2);
-    // Position lines on the front face of the screen
-    line.translate(-4 + lineWidth/2, 5 - i * 0.6, -3.2);
+  // Create "Code" lines on the screen
+  for(let i=0; i<8; i++) {
+    const lineWidth = 2.0 + Math.random() * 5.0;
+    const line = new THREE.BoxGeometry(lineWidth, 0.2, 0.2);
+    // Align to top-left of the screen
+    line.translate(-4.5 + lineWidth/2, 6 - i * 0.8, 0.3);
+    // Match screen tilt
+    line.rotateX(-0.15);
+    line.translate(0, -3.5, -4.0);
     parts.push(line);
   }
-  // A chunky "block" of code / curly braces stand-in
-  const codeBlock = new THREE.BoxGeometry(2, 2, 0.2);
-  codeBlock.translate(3, 3.5, -3.2);
+  
+  // A chunky "block" of code
+  const codeBlock = new THREE.BoxGeometry(2.5, 2.5, 0.2);
+  codeBlock.translate(3.5, 4.0, 0.3);
+  codeBlock.rotateX(-0.15);
+  codeBlock.translate(0, -3.5, -4.0);
   parts.push(codeBlock);
 
-  // Rotate screen back slightly
-  screen.rotateX(-0.1)
-  // Re-apply to all screen parts
-  parts.forEach((p, idx) => {
-    if(idx > 0) {
-      p.translate(0, -3, 3.5)
-      p.rotateX(-0.1)
-      p.translate(0, 3, -3.5)
-    }
-  })
-  
-  // Bring screen down to attach to base
-  parts.forEach((p, idx) => {
-    if(idx > 0) {
-      p.translate(0, -3, 0)
-    }
-  })
-
-  const trackpad = new THREE.BoxGeometry(3, 0.1, 2)
-  trackpad.translate(0, -2.8, 1.5)
+  // Trackpad
+  const trackpad = new THREE.BoxGeometry(3.5, 0.1, 2.5)
+  trackpad.translate(0, -3.3, 2.0)
   parts.push(trackpad)
   
   const merged = mergeGeometries(parts)
-  merged.rotateY(0.4)
-  merged.rotateX(0.2)
+  merged.rotateY(0.3)
+  merged.rotateX(0.1)
   return merged
 }
 
@@ -393,10 +387,10 @@ function ParticleMorphSystem() {
 
     // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    // On mobile, scale it to 55% and move it to the bottom-middle. On desktop, scale to 85% and move it to the right.
-    state.scene.scale.setScalar(isMobile ? 0.55 : 0.85)
-    state.scene.position.x = isMobile ? 0 : 4.0
-    state.scene.position.y = isMobile ? -1.0 : 0.0
+    // On mobile, scale it to 65% and move it to the bottom-middle. On desktop, full size and move to the right.
+    state.scene.scale.setScalar(isMobile ? 0.65 : 1.1)
+    state.scene.position.x = isMobile ? 0 : 4.5
+    state.scene.position.y = isMobile ? -1.0 : -0.5
   })
 
   const uniforms = useMemo(() => ({
