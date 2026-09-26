@@ -425,13 +425,21 @@ function ParticleMorphSystem() {
 }
 
 function BackgroundParticles() {
-  const count = 2500
+  const count = 2000
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
     for(let i=0; i<count; i++) {
-      arr[i*3+0] = (Math.random() - 0.5) * 60
-      arr[i*3+1] = (Math.random() - 0.5) * 60
-      arr[i*3+2] = (Math.random() - 0.5) * 40 - 20
+      // Natural spherical distribution (random point in a massive sphere)
+      // This prevents the particles from looking like a rigid floating cube!
+      const u = Math.random()
+      const v = Math.random()
+      const theta = u * 2.0 * Math.PI
+      const phi = Math.acos(2.0 * v - 1.0)
+      const r = Math.cbrt(Math.random()) * 60.0 // Massive 60-unit radius
+      
+      arr[i*3+0] = r * Math.sin(phi) * Math.cos(theta)
+      arr[i*3+1] = r * Math.sin(phi) * Math.sin(theta)
+      arr[i*3+2] = r * Math.cos(phi) - 20.0 // Pushed deep into the background
     }
     return arr
   }, [])
@@ -441,12 +449,16 @@ function BackgroundParticles() {
   
   useFrame((state) => {
     if(!pointsRef.current) return
-    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.03
-    pointsRef.current.rotation.x = state.clock.elapsedTime * 0.015
     
-    // Interactive parallax
-    pointsRef.current.position.x += (mouse.x * 2.0 - pointsRef.current.position.x) * 0.05
-    pointsRef.current.position.y += (mouse.y * 2.0 - pointsRef.current.position.y) * 0.05
+    // Very slow, natural celestial drift
+    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.015
+    pointsRef.current.rotation.z = state.clock.elapsedTime * 0.005
+    
+    // Smooth, gentle parallax based on mouse
+    const targetX = mouse.x * 2.0
+    const targetY = mouse.y * 2.0
+    pointsRef.current.position.x += (targetX - pointsRef.current.position.x) * 0.02
+    pointsRef.current.position.y += (targetY - pointsRef.current.position.y) * 0.02
   })
 
   return (
@@ -454,7 +466,15 @@ function BackgroundParticles() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.08} color="#00ff41" transparent opacity={0.4} sizeAttenuation={true} blending={THREE.AdditiveBlending} />
+      <pointsMaterial 
+        size={0.04} 
+        color="#00ff41" 
+        transparent 
+        opacity={0.15} 
+        sizeAttenuation={true} 
+        blending={THREE.AdditiveBlending} 
+        depthWrite={false}
+      />
     </points>
   )
 }
