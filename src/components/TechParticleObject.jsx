@@ -105,17 +105,18 @@ void main() {
   );
   targetPos += noisePos * noiseAmp;
 
-  // Hover Interaction (The Bulge)
-  // Distance in screen/world space xy
+  // Hover Interaction (The Spectacular Bulge)
   float dist = distance(targetPos.xy, uMouse.xy);
   if (dist < uMouseRadius) {
     float force = (uMouseRadius - dist) / uMouseRadius;
-    force = pow(force, 2.0); // Smooth falloff
-    // Push outward towards the camera (Z axis)
-    targetPos.z += force * 6.0;
-    // Slight stretch outwards from the mouse center
-    targetPos.x += (targetPos.x - uMouse.x) * force * 1.5;
-    targetPos.y += (targetPos.y - uMouse.y) * force * 1.5;
+    force = pow(force, 1.5); // Wider, softer falloff
+    
+    // Intense antigravity Z-push
+    targetPos.z += force * 10.0;
+    
+    // Splatter outwards from center of touch
+    targetPos.x += (targetPos.x - uMouse.x) * force * 3.0;
+    targetPos.y += (targetPos.y - uMouse.y) * force * 3.0;
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
@@ -143,43 +144,66 @@ void main() {
 // Extracts the edges but adds a slight, randomized natural "fuzz" to the lines
 // so they look like glowing clouds forming a shape rather than rigid math vectors.
 function sampleOrganicEdges(geometry, count) {
+  const edgeCount = Math.floor(count * 0.75) // 75% edge
+  const faceCount = count - edgeCount // 25% interior face fill
+  
   const edgesGeometry = new THREE.EdgesGeometry(geometry, 15)
   const edgePositions = edgesGeometry.attributes.position
-  const points = new Float32Array(count * 3)
+  const facePositions = geometry.attributes.position
+  const index = geometry.index
   
+  const points = new Float32Array(count * 3)
   const lineSegmentsCount = edgePositions.count / 2
   
   if (lineSegmentsCount === 0) return new Float32Array(count * 3)
 
-  for (let i = 0; i < count; i++) {
+  // EDGE SAMPLING
+  for (let i = 0; i < edgeCount; i++) {
     const lineIndex = Math.floor(Math.random() * lineSegmentsCount)
-    
     const v0x = edgePositions.getX(lineIndex * 2)
     const v0y = edgePositions.getY(lineIndex * 2)
     const v0z = edgePositions.getZ(lineIndex * 2)
-    
     const v1x = edgePositions.getX(lineIndex * 2 + 1)
     const v1y = edgePositions.getY(lineIndex * 2 + 1)
     const v1z = edgePositions.getZ(lineIndex * 2 + 1)
-    
     const t = Math.random()
-    
-    // Base position on the edge
     let px = v0x + (v1x - v0x) * t
     let py = v0y + (v1y - v0y) * t
     let pz = v0z + (v1z - v0z) * t
-
-    // Add natural organic fuzz/scatter (a Gaussian-like distribution)
-    const scatter = 0.12 // Scatter radius
+    const scatter = 0.15 
     px += (Math.random() - 0.5) * scatter
     py += (Math.random() - 0.5) * scatter
     pz += (Math.random() - 0.5) * scatter
-
     points[i * 3 + 0] = px
     points[i * 3 + 1] = py
     points[i * 3 + 2] = pz
   }
-  
+
+  // INTERIOR FACE SAMPLING
+  const getFaceRandom = (idx0, idx1, idx2) => {
+    const v0x = facePositions.getX(idx0), v0y = facePositions.getY(idx0), v0z = facePositions.getZ(idx0)
+    const v1x = facePositions.getX(idx1), v1y = facePositions.getY(idx1), v1z = facePositions.getZ(idx1)
+    const v2x = facePositions.getX(idx2), v2y = facePositions.getY(idx2), v2z = facePositions.getZ(idx2)
+    let r1 = Math.random(), r2 = Math.random()
+    if(r1 + r2 > 1) { r1 = 1 - r1; r2 = 1 - r2; }
+    return {
+      x: v0x * (1 - r1 - r2) + v1x * r1 + v2x * r2,
+      y: v0y * (1 - r1 - r2) + v1y * r1 + v2y * r2,
+      z: v0z * (1 - r1 - r2) + v1z * r1 + v2z * r2
+    }
+  }
+
+  const numFaces = index ? index.count / 3 : facePositions.count / 3
+  for (let i = 0; i < faceCount; i++) {
+    const faceIndex = Math.floor(Math.random() * numFaces)
+    const pt = index 
+      ? getFaceRandom(index.getX(faceIndex*3), index.getX(faceIndex*3+1), index.getX(faceIndex*3+2))
+      : getFaceRandom(faceIndex*3, faceIndex*3+1, faceIndex*3+2)
+    
+    points[(edgeCount + i) * 3 + 0] = pt.x
+    points[(edgeCount + i) * 3 + 1] = pt.y
+    points[(edgeCount + i) * 3 + 2] = pt.z
+  }
   return points
 }
 
@@ -349,7 +373,7 @@ function ParticleMorphSystem() {
     uTime: { value: 0 },
     uProgress: { value: 0 },
     uMouse: { value: new THREE.Vector3() },
-    uMouseRadius: { value: 4.0 }
+    uMouseRadius: { value: 7.0 }
   }), [])
 
   if (!geometries || !randoms) return null 
@@ -376,10 +400,46 @@ function ParticleMorphSystem() {
   )
 }
 
+function BackgroundParticles() {
+  const count = 2500
+  const positions = useMemo(() => {
+    const arr = new Float32Array(count * 3)
+    for(let i=0; i<count; i++) {
+      arr[i*3+0] = (Math.random() - 0.5) * 60
+      arr[i*3+1] = (Math.random() - 0.5) * 60
+      arr[i*3+2] = (Math.random() - 0.5) * 40 - 20
+    }
+    return arr
+  }, [])
+  
+  const pointsRef = useRef()
+  const { mouse } = useThree()
+  
+  useFrame((state) => {
+    if(!pointsRef.current) return
+    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.03
+    pointsRef.current.rotation.x = state.clock.elapsedTime * 0.015
+    
+    // Interactive parallax
+    pointsRef.current.position.x += (mouse.x * 2.0 - pointsRef.current.position.x) * 0.05
+    pointsRef.current.position.y += (mouse.y * 2.0 - pointsRef.current.position.y) * 0.05
+  })
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.08} color="#00ff41" transparent opacity={0.4} sizeAttenuation={true} blending={THREE.AdditiveBlending} />
+    </points>
+  )
+}
+
 export default function TechParticleObject() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: '#000000' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#000000' }}>
       <Canvas camera={{ position: [0, 0, 18], fov: 60 }} dpr={[1, 2]}>
+        <BackgroundParticles />
         <ParticleMorphSystem />
       </Canvas>
     </div>
