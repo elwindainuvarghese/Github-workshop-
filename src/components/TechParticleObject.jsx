@@ -214,11 +214,41 @@ function buildLaptop() {
   const base = new THREE.BoxGeometry(10, 0.4, 7)
   base.translate(0, -3, 0)
   parts.push(base)
+  
   const screen = new THREE.BoxGeometry(10, 6, 0.4)
   screen.translate(0, 3, -3.5)
+  
+  // Create "Code" lines on the screen so it isn't empty!
+  for(let i=0; i<7; i++) {
+    const lineWidth = 1.5 + Math.random() * 4.0;
+    const line = new THREE.BoxGeometry(lineWidth, 0.15, 0.2);
+    // Position lines on the front face of the screen
+    line.translate(-4 + lineWidth/2, 5 - i * 0.6, -3.2);
+    parts.push(line);
+  }
+  // A chunky "block" of code / curly braces stand-in
+  const codeBlock = new THREE.BoxGeometry(2, 2, 0.2);
+  codeBlock.translate(3, 3.5, -3.2);
+  parts.push(codeBlock);
+
+  // Rotate screen back slightly
   screen.rotateX(-0.1)
-  screen.translate(0, -3, 0)
-  parts.push(screen)
+  // Re-apply to all screen parts
+  parts.forEach((p, idx) => {
+    if(idx > 0) {
+      p.translate(0, -3, 3.5)
+      p.rotateX(-0.1)
+      p.translate(0, 3, -3.5)
+    }
+  })
+  
+  // Bring screen down to attach to base
+  parts.forEach((p, idx) => {
+    if(idx > 0) {
+      p.translate(0, -3, 0)
+    }
+  })
+
   const trackpad = new THREE.BoxGeometry(3, 0.1, 2)
   trackpad.translate(0, -2.8, 1.5)
   parts.push(trackpad)
@@ -301,7 +331,7 @@ function buildDesktop() {
 
 function ParticleMorphSystem() {
   const shaderRef = useRef()
-  const mouseWorld = useRef(new THREE.Vector3(0, 0, 0))
+  const mouseWorld = useRef(new THREE.Vector3(999, 999, 999))
   const { camera } = useThree()
   const [geometries, setGeometries] = useState(null)
   const [randoms, setRandoms] = useState(null)
@@ -363,17 +393,17 @@ function ParticleMorphSystem() {
 
     // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    // On mobile, scale it down to 40% and move it down. On desktop, scale to 85% and move it to the right.
-    state.scene.scale.setScalar(isMobile ? 0.40 : 0.85)
+    // On mobile, scale it to 55% and move it to the bottom-middle. On desktop, scale to 85% and move it to the right.
+    state.scene.scale.setScalar(isMobile ? 0.55 : 0.85)
     state.scene.position.x = isMobile ? 0 : 4.0
-    state.scene.position.y = isMobile ? -2.5 : 0.0
+    state.scene.position.y = isMobile ? -1.0 : 0.0
   })
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
-    uMouse: { value: new THREE.Vector3() },
-    uMouseRadius: { value: 7.0 }
+    uMouse: { value: new THREE.Vector3(999, 999, 999) },
+    uMouseRadius: { value: 3.5 }
   }), [])
 
   if (!geometries || !randoms) return null 
