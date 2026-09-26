@@ -425,21 +425,18 @@ function ParticleMorphSystem() {
 }
 
 function BackgroundParticles() {
-  const count = 2000
+  const count = 2500
   const positions = useMemo(() => {
     const arr = new Float32Array(count * 3)
+    
+    // Gaussian-like random generator (Central Limit Theorem)
+    const randG = () => (Math.random() + Math.random() + Math.random() - 1.5) * 2.0;
+
     for(let i=0; i<count; i++) {
-      // Natural spherical distribution (random point in a massive sphere)
-      // This prevents the particles from looking like a rigid floating cube!
-      const u = Math.random()
-      const v = Math.random()
-      const theta = u * 2.0 * Math.PI
-      const phi = Math.acos(2.0 * v - 1.0)
-      const r = Math.cbrt(Math.random()) * 60.0 // Massive 60-unit radius
-      
-      arr[i*3+0] = r * Math.sin(phi) * Math.cos(theta)
-      arr[i*3+1] = r * Math.sin(phi) * Math.sin(theta)
-      arr[i*3+2] = r * Math.cos(phi) - 20.0 // Pushed deep into the background
+      // Fuzzy, natural cloud distribution (no sharp cube edges!)
+      arr[i*3+0] = randG() * 50.0; // Wide X spread
+      arr[i*3+1] = randG() * 50.0; // Wide Y spread
+      arr[i*3+2] = randG() * 25.0 - 10.0; // Depth: mostly behind laptop, some in front
     }
     return arr
   }, [])
@@ -450,15 +447,14 @@ function BackgroundParticles() {
   useFrame((state) => {
     if(!pointsRef.current) return
     
-    // Very slow, natural celestial drift
-    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.015
-    pointsRef.current.rotation.z = state.clock.elapsedTime * 0.005
+    // Gentle floating
+    pointsRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.2) * 1.5;
     
     // Smooth, gentle parallax based on mouse
-    const targetX = mouse.x * 2.0
-    const targetY = mouse.y * 2.0
-    pointsRef.current.position.x += (targetX - pointsRef.current.position.x) * 0.02
-    pointsRef.current.position.y += (targetY - pointsRef.current.position.y) * 0.02
+    const targetX = mouse.x * 3.0
+    const targetY = mouse.y * 3.0
+    pointsRef.current.position.x += (targetX - pointsRef.current.position.x) * 0.05
+    pointsRef.current.position.y += (targetY - pointsRef.current.position.y) * 0.05
   })
 
   return (
@@ -467,10 +463,10 @@ function BackgroundParticles() {
         <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
       </bufferGeometry>
       <pointsMaterial 
-        size={0.04} 
+        size={0.12} 
         color="#00ff41" 
         transparent 
-        opacity={0.15} 
+        opacity={0.3} 
         sizeAttenuation={true} 
         blending={THREE.AdditiveBlending} 
         depthWrite={false}
