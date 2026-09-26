@@ -70,12 +70,10 @@ vec3 rotateY(vec3 v, float angle) {
 void main() {
   vec3 targetPos;
   
-  // Custom fluid transition variables
   float t; 
   vec3 startPos;
   vec3 endPos;
 
-  // 1. Determine which shapes to morph between
   if (uProgress < 1.0) {
     t = smoothstep(0.0, 1.0, uProgress);
     startPos = position; endPos = aPositionB;
@@ -87,23 +85,17 @@ void main() {
     startPos = aPositionC; endPos = aPositionD;
   }
 
-  // 2. FLUID MORPHING LOGIC (Swirling & Exploding during transition)
-  // Instead of a straight mathematical line, particles burst outward and swirl as they travel
-  float morphIntensity = sin(t * 3.14159); // 0 at start, 1 in middle, 0 at end
+  // Fluid transition
+  float morphIntensity = sin(t * 3.14159);
   vec3 midPos = mix(startPos, endPos, t);
-  
-  // Add a chaotic swirl during the transition based on the particle's random seed
-  float swirlAngle = morphIntensity * (aRandom * 10.0 - 5.0); // Spin left or right
+  float swirlAngle = morphIntensity * (aRandom * 10.0 - 5.0);
   vec3 swirlingPos = rotateY(midPos, swirlAngle);
-  
-  // Add an explosive vertical/outward burst during the middle of the transition
   swirlingPos.y += morphIntensity * (aRandom * 4.0 - 2.0);
   swirlingPos.x += morphIntensity * (aRandom * 4.0 - 2.0);
-
+  
   targetPos = swirlingPos;
 
-  // 3. ORGANIC DRIFT (Breathing)
-  // Constant fluid drift even when still
+  // Organic drift
   float noiseFreq = 0.15;
   float noiseAmp = 0.25;
   vec3 noisePos = vec3(
@@ -113,45 +105,38 @@ void main() {
   );
   targetPos += noisePos * noiseAmp;
 
-  // 4. MOUSE REPULSION (Fluid Physics)
-  float dist = distance(targetPos, uMouse);
+  // Hover Interaction (The Bulge)
+  // Distance in screen/world space xy
+  float dist = distance(targetPos.xy, uMouse.xy);
   if (dist < uMouseRadius) {
-    vec3 dir = normalize(targetPos - uMouse);
     float force = (uMouseRadius - dist) / uMouseRadius;
-    force = pow(force, 2.0); // Exponential spring curve
-    targetPos += dir * force * 2.5; // Stronger push
+    force = pow(force, 2.0); // Smooth falloff
+    // Push outward towards the camera (Z axis)
+    targetPos.z += force * 6.0;
+    // Slight stretch outwards from the mouse center
+    targetPos.x += (targetPos.x - uMouse.x) * force * 1.5;
+    targetPos.y += (targetPos.y - uMouse.y) * force * 1.5;
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
-  
-  // 5. NATURAL PARTICLE SIZE VARIANCE
-  // Some particles are tiny dust, others are glowing cores
   float baseSize = 8.0 + (aRandom * 12.0); 
   gl_PointSize = (baseSize / -mvPosition.z);
-  
   gl_Position = projectionMatrix * mvPosition;
-
-  // Twinkling opacity based on time and random seed
   vAlpha = 0.5 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.4);
 }
-`
+\`
 
-const fragmentShader = `
+const fragmentShader = \`
 varying float vAlpha;
 
 void main() {
   float dist = length(gl_PointCoord - vec2(0.5));
-  if (dist > 0.5) discard; // Circular particle
-  
-  // Strict Neon Terminal Green
+  if (dist > 0.5) discard;
   vec3 neonGreen = vec3(0.0, 1.0, 0.255);
-  
-  // Soft, natural edge blur
   float alpha = smoothstep(0.5, 0.1, dist) * vAlpha;
-  
   gl_FragColor = vec4(neonGreen, alpha);
 }
-`
+\`
 
 // ─── ORGANIC WIREFRAME EDGE SAMPLER ────────────────────────────────────────
 
@@ -351,6 +336,10 @@ function ParticleMorphSystem() {
     // Natural fluid breathing rotation
     state.scene.rotation.y = scrollNormal * Math.PI * 0.15 + Math.sin(state.clock.elapsedTime * 0.2) * 0.05
     state.scene.rotation.x = Math.cos(state.clock.elapsedTime * 0.15) * 0.05
+
+    // Shift to the left for the Hero Section Layout
+    const isMobile = window.innerWidth < 768
+    state.scene.position.x = isMobile ? 0 : -3.5
   })
 
   const uniforms = useMemo(() => ({
