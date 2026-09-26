@@ -124,9 +124,9 @@ void main() {
   gl_Position = projectionMatrix * mvPosition;
   vAlpha = 0.5 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.4);
 }
-\`
+`
 
-const fragmentShader = \`
+const fragmentShader = `
 varying float vAlpha;
 
 void main() {
@@ -136,7 +136,7 @@ void main() {
   float alpha = smoothstep(0.5, 0.1, dist) * vAlpha;
   gl_FragColor = vec4(neonGreen, alpha);
 }
-\`
+`
 
 // ─── ORGANIC WIREFRAME EDGE SAMPLER ────────────────────────────────────────
 
