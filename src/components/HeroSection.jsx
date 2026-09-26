@@ -280,7 +280,7 @@ export default function HeroSection() {
         </motion.div>
 
         {/* Mobile visual spacer for the 3D Laptop */}
-        {isMobile && <div style={{ height: '25vh', width: '100%' }} />}
+        {isMobile && <div style={{ height: '20vh', width: '100%' }} />}
 
         {/* Buttons */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}

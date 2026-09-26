@@ -412,7 +412,7 @@ function ParticleMorphSystem() {
     // On mobile, scale it down to fit in the 40vh visual gap and center it. On desktop, full size and move to the right half.
     state.scene.scale.setScalar(isMobile ? 0.65 : 1.1)
     state.scene.position.x = isMobile ? 0 : state.viewport.width * 0.22
-    state.scene.position.y = isMobile ? 0.0 : -0.5
+    state.scene.position.y = isMobile ? -1.2 : -0.5
     
     // Decay pulse
     shaderRef.current.uniforms.uPulse.value = THREE.MathUtils.lerp(shaderRef.current.uniforms.uPulse.value, 0.0, 0.05)
