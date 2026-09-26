@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Stars } from '@react-three/drei'
+import { Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils'
 
@@ -10,6 +10,7 @@ uniform float uTime;
 uniform float uProgress;
 uniform vec3 uMouse;
 uniform float uMouseRadius;
+uniform float uPulse;
 
 attribute vec3 aPositionB;
 attribute vec3 aPositionC;
@@ -106,6 +107,15 @@ void main() {
   );
   targetPos += noisePos * noiseAmp;
 
+  // The Pulse (Triggered by Terminal Sync)
+  if (uPulse > 0.0) {
+    float pulseDist = length(targetPos.xy);
+    float pulseWave = sin(pulseDist * 3.0 - uTime * 20.0) * uPulse;
+    targetPos.z += pulseWave * 2.5;
+    targetPos.x += (targetPos.x * pulseWave * 0.3);
+    targetPos.y += (targetPos.y * pulseWave * 0.3);
+  }
+
   // Hover Interaction (Subtle Magnetic Scatter)
   float dist = distance(targetPos.xy, uMouse.xy);
   if (dist < uMouseRadius) {
@@ -121,9 +131,14 @@ void main() {
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
   float baseSize = 10.0 + (aRandom * 14.0); 
+  // Add pulse glow size boost
+  baseSize += (uPulse * aRandom * 25.0);
+  
   gl_PointSize = (baseSize / -mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
+  
   vAlpha = 0.4 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.5);
+  vAlpha += (uPulse * 0.6); // Brighten dramatically during pulse
 }
 `
 
@@ -133,9 +148,15 @@ varying float vAlpha;
 void main() {
   float dist = length(gl_PointCoord - vec2(0.5));
   if (dist > 0.5) discard;
+  
+  // Add a bright core to the particles
+  float core = smoothstep(0.3, 0.0, dist);
+  core = pow(core, 2.0);
+
   vec3 neonGreen = vec3(0.0, 1.0, 0.255);
   float alpha = smoothstep(0.5, 0.1, dist) * vAlpha;
-  gl_FragColor = vec4(neonGreen, alpha);
+  
+  gl_FragColor = vec4(neonGreen + (core * 0.6), alpha);
 }
 `
 
@@ -392,36 +413,108 @@ function ParticleMorphSystem() {
     state.scene.scale.setScalar(isMobile ? 0.65 : 1.1)
     state.scene.position.x = isMobile ? 0 : 4.5
     state.scene.position.y = isMobile ? -1.0 : -0.5
+    
+    // Decay pulse
+    shaderRef.current.uniforms.uPulse.value = THREE.MathUtils.lerp(shaderRef.current.uniforms.uPulse.value, 0.0, 0.05)
   })
+
+  useEffect(() => {
+    const handlePulse = () => {
+      if (shaderRef.current) {
+        shaderRef.current.uniforms.uPulse.value = 1.0;
+      }
+    }
+    window.addEventListener('terminalPulse', handlePulse)
+    return () => window.removeEventListener('terminalPulse', handlePulse)
+  }, [])
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
     uMouse: { value: new THREE.Vector3(999, 999, 999) },
-    uMouseRadius: { value: 3.5 }
+    uMouseRadius: { value: 3.5 },
+    uPulse: { value: 0.0 }
   }), [])
+
+function GitScreen() {
+  return (
+    <group rotation={[0.1, 0.3, 0]}>
+      <Html
+        transform
+        position={[-0.2, -0.6, -3.9]}
+        rotation={[-0.15, 0, 0]}
+        scale={0.016}
+        occlude="blending"
+      >
+        <div style={{
+          width: '600px', height: '360px',
+          fontFamily: "'Share Tech Mono', monospace", color: '#00ff41',
+          display: 'flex', border: '1px solid rgba(0,255,65,0.4)',
+          background: 'rgba(0,0,0,0.85)', padding: '20px',
+          boxShadow: '0 0 30px rgba(0,255,65,0.2) inset, 0 0 20px rgba(0,255,65,0.4)',
+          borderRadius: '4px'
+        }}>
+          {/* Directory Tree */}
+          <div style={{ flex: 0.8, borderRight: '1px solid rgba(0,255,65,0.3)', paddingRight: '10px', fontSize: '14px' }}>
+            <div style={{ color: '#fff', marginBottom: '15px', fontWeight: 'bold' }}>📂 workshop/</div>
+            <div style={{ marginLeft: '15px', color: 'rgba(255,255,255,0.7)', marginBottom: '10px' }}>📄 README.md</div>
+            <div style={{ marginLeft: '15px', color: 'rgba(255,255,255,0.7)', marginBottom: '10px' }}>📄 index.html</div>
+            <div style={{ marginLeft: '15px', color: '#00f5ff', marginBottom: '10px' }}>📂 assets/</div>
+            <div style={{ marginLeft: '15px', color: 'rgba(255,255,255,0.7)', marginBottom: '10px' }}>📂 docs/</div>
+            <div style={{ marginLeft: '15px', color: '#00ff41', marginBottom: '10px' }}>📂 src/</div>
+            <div style={{ marginLeft: '15px', color: 'rgba(255,255,255,0.5)', marginBottom: '10px' }}>📄 LICENSE</div>
+          </div>
+          {/* Git Graph */}
+          <div style={{ flex: 1.5, paddingLeft: '30px', position: 'relative' }}>
+             <div style={{ position: 'absolute', top: '50px', left: '60px', width: '250px', height: '2px', background: '#00ff41', boxShadow: '0 0 10px #00ff41' }}></div>
+             <div style={{ position: 'absolute', top: '50px', left: '160px', width: '2px', height: '120px', background: '#00f5ff', boxShadow: '0 0 10px #00f5ff' }}></div>
+             <div style={{ position: 'absolute', top: '170px', left: '160px', width: '100px', height: '2px', background: '#00f5ff', boxShadow: '0 0 10px #00f5ff' }}></div>
+             <div style={{ position: 'absolute', top: '170px', left: '260px', width: '2px', height: '80px', background: '#a855f7', boxShadow: '0 0 10px #a855f7' }}></div>
+             
+             {/* Nodes */}
+             <div style={{ position: 'absolute', top: '44px', left: '54px', width: '14px', height: '14px', borderRadius: '50%', background: '#00ff41', boxShadow: '0 0 15px #00ff41' }}></div>
+             <div style={{ position: 'absolute', top: '44px', left: '154px', width: '14px', height: '14px', borderRadius: '50%', background: '#00ff41', boxShadow: '0 0 15px #00ff41' }}></div>
+             <div style={{ position: 'absolute', top: '44px', left: '254px', width: '14px', height: '14px', borderRadius: '50%', background: '#00ff41', boxShadow: '0 0 15px #00ff41' }}></div>
+             
+             <div style={{ position: 'absolute', top: '164px', left: '254px', width: '14px', height: '14px', borderRadius: '50%', background: '#00f5ff', boxShadow: '0 0 15px #00f5ff' }}></div>
+             <div style={{ position: 'absolute', top: '244px', left: '254px', width: '14px', height: '14px', borderRadius: '50%', background: '#a855f7', boxShadow: '0 0 15px #a855f7' }}></div>
+             
+             {/* Tags */}
+             <div style={{ position: 'absolute', top: '15px', left: '145px', border: '1px solid #00ff41', padding: '4px 12px', fontSize: '14px', borderRadius: '14px', background: 'rgba(0,255,65,0.1)' }}>main</div>
+             <div style={{ position: 'absolute', top: '135px', left: '245px', border: '1px solid #00f5ff', padding: '4px 12px', fontSize: '14px', borderRadius: '14px', color: '#00f5ff', background: 'rgba(0,245,255,0.1)' }}>feature</div>
+             <div style={{ position: 'absolute', top: '270px', left: '235px', border: '1px solid #a855f7', padding: '4px 12px', fontSize: '14px', borderRadius: '14px', color: '#a855f7', background: 'rgba(168,85,247,0.1)' }}>commit</div>
+          </div>
+        </div>
+      </Html>
+    </group>
+  )
+}
 
   if (!geometries || !randoms) return null 
 
   return (
-    <points>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={geometries.posA} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={geometries.posB} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={geometries.posC} itemSize={3} />
-        <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={geometries.posD} itemSize={3} />
-        <bufferAttribute attach="attributes-aRandom" count={PARTICLE_COUNT} array={randoms} itemSize={1} />
-      </bufferGeometry>
-      <shaderMaterial
-        ref={shaderRef}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        transparent={true}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
+    <group>
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={PARTICLE_COUNT} array={geometries.posA} itemSize={3} />
+          <bufferAttribute attach="attributes-aPositionB" count={PARTICLE_COUNT} array={geometries.posB} itemSize={3} />
+          <bufferAttribute attach="attributes-aPositionC" count={PARTICLE_COUNT} array={geometries.posC} itemSize={3} />
+          <bufferAttribute attach="attributes-aPositionD" count={PARTICLE_COUNT} array={geometries.posD} itemSize={3} />
+          <bufferAttribute attach="attributes-aRandom" count={PARTICLE_COUNT} array={randoms} itemSize={1} />
+        </bufferGeometry>
+        <shaderMaterial
+          ref={shaderRef}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={uniforms}
+          transparent={true}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </points>
+      {/* Render the interactive UI physically onto the 3D screen */}
+      <GitScreen />
+    </group>
   )
 }
 

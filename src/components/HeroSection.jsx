@@ -123,17 +123,57 @@ export default function HeroSection() {
 
   const { lines: typedLines } = useTyping(TERMINAL_LINES, 50, 800)
 
+  // Fire a 3D WebGL pulse when the commit happens
+  useEffect(() => {
+    const commitLine = '> [main 773a902] first breath'
+    if (typedLines.includes(commitLine)) {
+      if (!window.__pulseFired) {
+        window.__pulseFired = true
+        window.dispatchEvent(new Event('terminalPulse'))
+      }
+    }
+  }, [typedLines])
+
   return (
     <section className="hero-section" style={{
       minHeight: '100vh',
       display: 'flex',
       flexDirection: isMobile ? 'column' : 'row',
       position: 'relative',
-      padding: isMobile ? '40px 16px' : '60px 40px',
+      padding: isMobile ? '80px 16px 40px' : '100px 60px',
       overflow: 'hidden',
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      color: '#fff',
+      fontFamily: "'Space Grotesk', sans-serif"
     }}>
       
+      {/* NAVBAR */}
+      <nav style={{
+        position: 'absolute', top: 0, left: 0, right: 0,
+        display: isMobile ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '20px 40px', pointerEvents: 'auto', zIndex: 50,
+        borderBottom: '1px solid rgba(0,255,65,0.1)',
+        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)',
+      }}>
+        <div style={{ fontFamily: "'Orbitron'", fontWeight: 800, fontSize: '20px', color: '#00ff41', letterSpacing: '2px' }}>
+          [CODEX]
+        </div>
+        <div style={{ display: 'flex', gap: '30px', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
+          <span style={{ color: '#00ff41', cursor: 'pointer' }}>• HOME</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: '0.3s' }}>WORKSHOP</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: '0.3s' }}>SCHEDULE</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: '0.3s' }}>ABOUT</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: '0.3s' }}>MENTORS</span>
+        </div>
+        <button style={{
+          border: '1px solid #00ff41', color: '#00ff41',
+          padding: '8px 24px', fontSize: '12px', fontWeight: 600,
+          background: 'rgba(0,255,65,0.05)', cursor: 'pointer', transition: '0.3s'
+        }}>
+          REGISTER →
+        </button>
+      </nav>
+
       {/* Background gradients to frame the tech */}
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 25% 40%, rgba(0,255,65,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
@@ -146,49 +186,67 @@ export default function HeroSection() {
         alignItems: isMobile ? 'center' : 'flex-start',
         position: 'relative',
         zIndex: 10,
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        paddingRight: isMobile ? '0' : '40px'
       }}>
         
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ pointerEvents: 'auto', marginBottom: '10px' }}
-        >
+        <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} style={{ pointerEvents: 'auto', marginBottom: '10px' }}>
           <GlitchTitle isMobile={isMobile} />
         </motion.div>
         
         {/* Gradient Subheading */}
-        <motion.div
-          initial={{ opacity: 0, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 1, delay: 0.3 }}
+        <motion.div initial={{ opacity: 0, filter: 'blur(10px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 1, delay: 0.3 }}
           style={{
-            fontFamily: "'Orbitron'",
-            fontWeight: 800,
-            fontSize: isMobile ? '12px' : '20px',
-            marginBottom: '40px',
-            background: 'linear-gradient(90deg, #00ff41, #00f5ff, #ff003c, #a855f7)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: isMobile ? '1px' : '2px',
+            fontFamily: "'Orbitron'", fontWeight: 800, fontSize: isMobile ? '14px' : '20px',
+            marginBottom: '20px', background: 'linear-gradient(90deg, #00ff41, #00f5ff, #ff003c, #a855f7)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: isMobile ? '1px' : '2px',
             textAlign: isMobile ? 'center' : 'left'
-          }}
-        >
+          }}>
           BUILD. COMMIT. BREAK. RECOVER.
+        </motion.div>
+
+        {/* Body Text */}
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+          style={{
+            color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? '14px' : '16px', lineHeight: 1.6,
+            maxWidth: '500px', marginBottom: '30px', textAlign: isMobile ? 'center' : 'left',
+            fontFamily: "'Share Tech Mono'"
+          }}>
+          Learn Git & GitHub through hands-on practice, real workflows and collaborative development.
+        </motion.p>
+
+        {/* Grid Info Panel */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+          style={{ display: 'flex', gap: '30px', marginBottom: '40px', flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '24px' }}>📅</span>
+            <div><div style={{ fontSize: '12px', fontWeight: 700 }}>26 SEP 2026</div><div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>SATURDAY</div></div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '24px' }}>🕒</span>
+            <div><div style={{ fontSize: '12px', fontWeight: 700 }}>10:00 AM - 1:00 PM</div><div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>3 HOURS</div></div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '24px' }}>📍</span>
+            <div><div style={{ fontSize: '12px', fontWeight: 700 }}>ST. FRANCIS</div><div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>INSTITUTE OF TECHNOLOGY</div></div>
+          </div>
+        </motion.div>
+
+        {/* Buttons */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+          style={{ display: 'flex', gap: '15px', marginBottom: '50px', pointerEvents: 'auto' }}>
+          <button style={{ background: '#00ff41', color: '#000', padding: '12px 24px', fontWeight: 700, fontSize: '14px', fontFamily: "'Orbitron'", cursor: 'pointer', border: 'none', boxShadow: '0 0 15px rgba(0,255,65,0.4)' }}>
+            &gt; REGISTER NOW
+          </button>
+          <button style={{ background: 'transparent', border: '1px solid #00ff41', color: '#00ff41', padding: '12px 24px', fontWeight: 700, fontSize: '14px', fontFamily: "'Orbitron'", cursor: 'pointer' }}>
+            &gt; VIEW DETAILS
+          </button>
         </motion.div>
 
         {/* The Terminal Window */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-          style={{
-            width: '100%',
-            maxWidth: '540px',
-            pointerEvents: 'auto'
-          }}
-          className="terminal-card"
+          initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+          style={{ width: '100%', maxWidth: '540px', pointerEvents: 'auto' }} className="terminal-card"
         >
           <div className="terminal-header" style={{ display: 'flex', gap: '8px', padding: '10px 16px', background: 'rgba(0,255,65,0.05)', borderBottom: '1px solid rgba(0,255,65,0.2)' }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff003c' }} />
@@ -198,17 +256,10 @@ export default function HeroSection() {
           </div>
           <div style={{ padding: '20px', minHeight: '180px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}>
             {typedLines.map((line, i) => (
-              <div key={i} style={{
-                fontSize: isMobile ? '10px' : '13px',
-                lineHeight: 1.8,
-                color: line.startsWith('$') ? '#00ff41' : 'rgba(255,255,255,0.7)',
-                fontFamily: "'Share Tech Mono', monospace",
-              }}>
+              <div key={i} style={{ fontSize: isMobile ? '10px' : '13px', lineHeight: 1.8, color: line.startsWith('$') ? '#00ff41' : 'rgba(255,255,255,0.7)', fontFamily: "'Share Tech Mono', monospace" }}>
                 {line}
                 {i === typedLines.length - 1 && (
-                  <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 0.7 }} style={{ marginLeft: '4px', color: '#00ff41' }}>
-                    █
-                  </motion.span>
+                  <motion.span animate={{ opacity: [1, 0, 1] }} transition={{ repeat: Infinity, duration: 0.7 }} style={{ marginLeft: '4px', color: '#00ff41' }}>█</motion.span>
                 )}
               </div>
             ))}
@@ -216,8 +267,40 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* RIGHT SIDE: Empty space for 3D Canvas */}
-      <div style={{ flex: 1, pointerEvents: 'none' }} />
+      {/* RIGHT SIDE: Floating Glassmorphic Cards (over 3D Canvas) */}
+      {!isMobile && (
+        <div style={{ flex: 1, position: 'relative', pointerEvents: 'none' }}>
+           {/* GitHub Stats Card */}
+           <motion.div 
+             initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.2 }}
+             style={{
+               position: 'absolute', top: '10%', right: '0%', padding: '20px',
+               background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,255,65,0.2)',
+               backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: '20px'
+             }}>
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="#00ff41"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontFamily: "'Share Tech Mono'", display: 'flex', flexDirection: 'column', gap: '4px' }}>
+               <span>Collaborate</span><span>Build</span><span>Share</span><span>Grow</span>
+               <div style={{ width: '20px', height: '2px', background: '#00ff41', marginTop: '4px' }}></div>
+             </div>
+           </motion.div>
+
+           {/* Metrics Card */}
+           <motion.div 
+             initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.4 }}
+             style={{
+               position: 'absolute', top: '45%', right: '5%', padding: '20px',
+               background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(0,255,65,0.2)',
+               backdropFilter: 'blur(8px)', fontFamily: "'Share Tech Mono'", fontSize: '12px',
+               color: 'rgba(255,255,255,0.8)'
+             }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ color: '#00ff41' }}>◎</span> 12 Contributors</div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ color: '#f5a623' }}>ᛦ</span> 48 Commits</div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ color: '#00f5ff' }}>⎇</span> 5 Branches</div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{ color: '#a855f7' }}>⚲</span> 1 Community</div>
+           </motion.div>
+        </div>
+      )}
     </section>
   )
 }
