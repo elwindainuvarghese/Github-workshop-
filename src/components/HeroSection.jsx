@@ -66,11 +66,11 @@ function GlitchTitle({ isMobile }) {
     return () => clearTimeout(t)
   }, [])
 
-  const fontSize = isMobile ? 'clamp(32px, 12vw, 60px)' : 'clamp(36px, 4.5vw, 90px)'
+  const fontSize = isMobile ? 'clamp(32px, 12vw, 60px)' : 'clamp(48px, 6vw, 100px)'
   const offset = glitching ? (isMobile ? '2px' : '4px') : (isMobile ? '1px' : '2px')
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block', userSelect: 'none', maxWidth: '100%', textAlign: isMobile ? 'center' : 'right' }}>
+    <div style={{ position: 'relative', display: 'inline-block', userSelect: 'none', maxWidth: '100%', textAlign: isMobile ? 'center' : 'left' }}>
       {/* Red layer */}
       <div aria-hidden style={{
         position: 'absolute', top: 0, left: `-${offset}`,
@@ -106,29 +106,6 @@ function GlitchTitle({ isMobile }) {
   )
 }
 
-function FloatingLabel({ text, delay, yOffset }) {
-  return (
-    <motion.div
-      animate={{ y: [0, yOffset, 0] }}
-      transition={{ repeat: Infinity, duration: 4 + delay, ease: "easeInOut" }}
-      style={{
-        padding: '6px 12px',
-        border: '1px solid rgba(0,255,65,0.3)',
-        background: 'rgba(0,0,0,0.6)',
-        color: 'rgba(0,255,65,0.8)',
-        fontFamily: "'Share Tech Mono'",
-        fontSize: '12px',
-        backdropFilter: 'blur(4px)',
-        boxShadow: '0 0 10px rgba(0,255,65,0.1)',
-        display: 'inline-block',
-        whiteSpace: 'nowrap'
-      }}
-    >
-      [{text}]
-    </motion.div>
-  )
-}
-
 export default function HeroSection() {
   const isMobile = useIsMobile()
 
@@ -152,33 +129,58 @@ export default function HeroSection() {
       display: 'flex',
       flexDirection: isMobile ? 'column' : 'row',
       position: 'relative',
-      padding: isMobile ? '60px 16px 40px' : '40px',
+      padding: isMobile ? '40px 16px' : '60px 40px',
       overflow: 'hidden',
       pointerEvents: 'none'
     }}>
       
       {/* Background gradients to frame the tech */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 75% 40%, rgba(0,255,65,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 25% 40%, rgba(0,255,65,0.03) 0%, transparent 60%)', pointerEvents: 'none' }} />
 
-      {/* LEFT SIDE: Terminal */}
+      {/* LEFT SIDE: Typography & Terminal */}
       <div style={{
-        flex: 1,
+        flex: 1.2,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: isMobile ? 'center' : 'flex-end',
+        justifyContent: 'center',
         alignItems: isMobile ? 'center' : 'flex-start',
         position: 'relative',
         zIndex: 10,
-        pointerEvents: 'none',
-        paddingBottom: isMobile ? '20px' : '80px',
-        paddingLeft: isMobile ? '0' : '40px',
-        order: isMobile ? 2 : 1, // Terminal below text on mobile
-        marginTop: isMobile ? 'auto' : '0' // Push to bottom on mobile
+        pointerEvents: 'none'
       }}>
         
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ pointerEvents: 'auto', marginBottom: '10px' }}
+        >
+          <GlitchTitle isMobile={isMobile} />
+        </motion.div>
+        
+        {/* Gradient Subheading */}
+        <motion.div
+          initial={{ opacity: 0, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 1, delay: 0.3 }}
+          style={{
+            fontFamily: "'Orbitron'",
+            fontWeight: 800,
+            fontSize: isMobile ? '12px' : '20px',
+            marginBottom: '40px',
+            background: 'linear-gradient(90deg, #00ff41, #00f5ff, #ff003c, #a855f7)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            letterSpacing: isMobile ? '1px' : '2px',
+            textAlign: isMobile ? 'center' : 'left'
+          }}
+        >
+          BUILD. COMMIT. BREAK. RECOVER.
+        </motion.div>
+
         {/* The Terminal Window */}
         <motion.div
-          initial={{ opacity: 0, y: 100 }}
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
           style={{
@@ -214,108 +216,8 @@ export default function HeroSection() {
         </motion.div>
       </div>
 
-      {/* RIGHT SIDE: Typography & Tags */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: isMobile ? 'flex-end' : 'center',
-        alignItems: isMobile ? 'center' : 'flex-end',
-        position: 'relative',
-        zIndex: 10,
-        pointerEvents: 'none',
-        paddingRight: isMobile ? '0' : '40px',
-        order: isMobile ? 1 : 2, // Text above terminal on mobile
-        paddingTop: isMobile ? '280px' : '0' // Push text down to make room for laptop on mobile
-      }}>
-        
-        {/* Floating Labels Cloud */}
-        {!isMobile && (
-          <>
-            <div style={{ position: 'absolute', top: '15%', right: '-10%', opacity: 0.6, pointerEvents: 'none' }}>
-              <div style={{ transform: 'rotate(15deg)' }}><FloatingLabel text="Code Review" delay={0.5} yOffset={-15} /></div>
-            </div>
-            <div style={{ position: 'absolute', bottom: '25%', right: '60%', opacity: 0.5, pointerEvents: 'none' }}>
-              <div style={{ transform: 'rotate(-10deg)' }}><FloatingLabel text="CI/CD" delay={1.2} yOffset={10} /></div>
-            </div>
-            <div style={{ position: 'absolute', top: '35%', right: '80%', opacity: 0.7, pointerEvents: 'none' }}>
-              <FloatingLabel text="Git Flow" delay={0} yOffset={-20} />
-            </div>
-          </>
-        )}
-
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ pointerEvents: 'auto' }}
-        >
-          <GlitchTitle isMobile={isMobile} />
-        </motion.div>
-        
-        {/* Gradient Subheading */}
-        <motion.div
-          initial={{ opacity: 0, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 1, delay: 0.3 }}
-          style={{
-            fontFamily: "'Orbitron'",
-            fontWeight: 800,
-            fontSize: isMobile ? '12px' : '24px',
-            marginTop: '16px',
-            background: 'linear-gradient(90deg, #00ff41, #00f5ff, #ff003c, #a855f7)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            letterSpacing: isMobile ? '1px' : '2px',
-            textAlign: isMobile ? 'center' : 'right'
-          }}
-        >
-          BUILD. COMMIT. BREAK. RECOVER.
-        </motion.div>
-
-        {/* Vertical Tags List (Right Edge) */}
-        {!isMobile && (
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
-            style={{
-              position: 'absolute',
-              right: '20px',
-              bottom: '10%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              alignItems: 'flex-end',
-              pointerEvents: 'auto'
-            }}
-          >
-            {[
-              { title: 'Git Flow', sub: 'Workflow & Collaboration' },
-              { title: 'Branching Strategy', sub: 'Feature · Develop · Main' },
-              { title: 'Code Review', sub: 'Better Code Together' },
-              { title: 'CI/CD', sub: 'Automate · Test · Deploy' }
-            ].map((tag, i) => (
-              <motion.div 
-                key={i} 
-                whileHover={{ x: -10, scale: 1.05 }}
-                style={{ 
-                  border: '1px solid rgba(0,255,65,0.3)', 
-                  background: 'rgba(0,0,0,0.8)', 
-                  padding: '10px 16px', 
-                  borderRadius: '4px',
-                  textAlign: 'right',
-                  cursor: 'crosshair',
-                  boxShadow: '0 0 10px rgba(0,255,65,0.1)'
-                }}
-              >
-                <div style={{ color: '#00ff41', fontFamily: "'Orbitron'", fontWeight: 700, fontSize: '14px' }}>{tag.title}</div>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontFamily: "'Space Grotesk'", fontSize: '10px' }}>{tag.sub}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </div>
+      {/* RIGHT SIDE: Empty space for 3D Canvas */}
+      <div style={{ flex: 1, pointerEvents: 'none' }} />
     </section>
   )
 }

@@ -119,7 +119,7 @@ void main() {
   }
 
   vec4 mvPosition = modelViewMatrix * vec4(targetPos, 1.0);
-  float baseSize = 8.0 + (aRandom * 12.0); 
+  float baseSize = 12.0 + (aRandom * 16.0); // Made particles bigger
   gl_PointSize = (baseSize / -mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
   vAlpha = 0.5 + (sin(uTime * 3.0 + aRandom * 10.0) * 0.4);
@@ -339,10 +339,10 @@ function ParticleMorphSystem() {
 
     // Shift and scale for the Hero Section Layout
     const isMobile = window.innerWidth < 768
-    // On mobile, scale it down to 35% and move it up. On desktop, scale to 85% and move it left & up.
-    state.scene.scale.setScalar(isMobile ? 0.35 : 0.85)
-    state.scene.position.x = isMobile ? 0 : -4.0
-    state.scene.position.y = isMobile ? 3.0 : 1.0
+    // On mobile, scale it down to 40% and move it down. On desktop, scale to 85% and move it to the right.
+    state.scene.scale.setScalar(isMobile ? 0.40 : 0.85)
+    state.scene.position.x = isMobile ? 0 : 4.0
+    state.scene.position.y = isMobile ? -2.5 : 0.0
   })
 
   const uniforms = useMemo(() => ({
