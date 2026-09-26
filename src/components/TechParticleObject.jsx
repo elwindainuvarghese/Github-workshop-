@@ -1,5 +1,6 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils'
 
@@ -424,54 +425,26 @@ function ParticleMorphSystem() {
   )
 }
 
-function BackgroundParticles() {
-  const count = 2500
-  const positions = useMemo(() => {
-    const arr = new Float32Array(count * 3)
-    
-    // Gaussian-like random generator (Central Limit Theorem)
-    const randG = () => (Math.random() + Math.random() + Math.random() - 1.5) * 2.0;
-
-    for(let i=0; i<count; i++) {
-      // Fuzzy, natural cloud distribution (no sharp cube edges!)
-      arr[i*3+0] = randG() * 50.0; // Wide X spread
-      arr[i*3+1] = randG() * 50.0; // Wide Y spread
-      arr[i*3+2] = randG() * 25.0 - 10.0; // Depth: mostly behind laptop, some in front
-    }
-    return arr
-  }, [])
-  
-  const pointsRef = useRef()
+function InteractiveStars() {
+  const group = useRef()
   const { mouse } = useThree()
   
   useFrame((state) => {
-    if(!pointsRef.current) return
-    
-    // Gentle floating
-    pointsRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.2) * 1.5;
+    if(!group.current) return
+    group.current.rotation.y = state.clock.elapsedTime * 0.02
+    group.current.rotation.x = state.clock.elapsedTime * 0.01
     
     // Smooth, gentle parallax based on mouse
-    const targetX = mouse.x * 3.0
-    const targetY = mouse.y * 3.0
-    pointsRef.current.position.x += (targetX - pointsRef.current.position.x) * 0.05
-    pointsRef.current.position.y += (targetY - pointsRef.current.position.y) * 0.05
+    const targetX = mouse.x * 2.0
+    const targetY = mouse.y * 2.0
+    group.current.position.x += (targetX - group.current.position.x) * 0.02
+    group.current.position.y += (targetY - group.current.position.y) * 0.02
   })
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
-      </bufferGeometry>
-      <pointsMaterial 
-        size={0.12} 
-        color="#00ff41" 
-        transparent 
-        opacity={0.3} 
-        sizeAttenuation={true} 
-        blending={THREE.AdditiveBlending} 
-        depthWrite={false}
-      />
-    </points>
+    <group ref={group}>
+      <Stars radius={100} depth={50} count={3500} factor={4} saturation={0} fade speed={1} color="#00ff41" />
+    </group>
   )
 }
 
@@ -479,7 +452,7 @@ export default function TechParticleObject() {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: '#000000' }}>
       <Canvas camera={{ position: [0, 0, 18], fov: 60 }} dpr={[1, 2]}>
-        <BackgroundParticles />
+        <InteractiveStars />
         <ParticleMorphSystem />
       </Canvas>
     </div>
